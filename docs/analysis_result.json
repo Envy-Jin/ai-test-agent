@@ -1,0 +1,17 @@
+{
+  "filepath": "docs\\sample_requirement.txt",
+  "char_count": 213,
+  "line_count": 13,
+  "keywords": [
+    "必须",
+    "不允许",
+    "超过",
+    "支持",
+    "不得",
+    "至少"
+  ],
+  "keyword_lines": [
+    "1. 账号支持11位手机号或标准邮箱。",
+    "3. 同一账号连续登录失败超过5次，锁定30分钟，期间禁止登录。"
+  ]
+}
