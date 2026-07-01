@@ -76,6 +76,19 @@ class TestCaseManager:
         """
         return [case for case in self._cases if case.test_type == test_type]
 
+    def count_by_priority(self) -> dict[str, int]:
+        """
+        按优先级统计用例数量。
+
+        Returns:
+            以优先级为 key、用例数量为 value 的字典，
+            例如 {"P0": 2, "P1": 5, "P2": 3}。无某优先级时不包含该 key。
+        """
+        counts: dict[str, int] = {}
+        for case in self._cases:
+            counts[case.priority] = counts.get(case.priority, 0) + 1
+        return counts
+
     def save_to_json(self, filepath: str) -> None:
         """
         将当前所有测试用例序列化并写入 JSON 文件。
@@ -142,6 +155,53 @@ class TestCaseManager:
 
         self._cases = loaded_cases
 
+    def _format_steps(self, steps: list[str]) -> str:
+        """将测试步骤格式化为表格单元格文本。"""
+        return "; ".join(f"{index}. {step}" for index, step in enumerate(steps, 1))
+
+    def _escape_markdown_cell(self, text: str) -> str:
+        """转义 Markdown 表格单元格中的特殊字符。"""
+        return text.replace("|", "\\|").replace("\n", " ")
+
+    def _build_markdown_table(self) -> str:
+        """将当前测试用例列表构建为 Markdown 表格字符串。"""
+        header = "| ID | 标题 | 类型 | 优先级 | 预期结果 | 测试步骤 |"
+        separator = "|------|------|------|--------|----------|----------|"
+
+        if not self._cases:
+            return "\n".join([header, separator, "| （暂无测试用例） | | | | | |"])
+
+        rows = [
+            "| "
+            f"{self._escape_markdown_cell(case.id)} | "
+            f"{self._escape_markdown_cell(case.title)} | "
+            f"{self._escape_markdown_cell(case.test_type)} | "
+            f"{self._escape_markdown_cell(case.priority)} | "
+            f"{self._escape_markdown_cell(case.expected_result)} | "
+            f"{self._escape_markdown_cell(self._format_steps(case.steps))} |"
+            for case in self._cases
+        ]
+        return "\n".join([header, separator, *rows])
+
+    def export_to_markdown(self, filepath: str) -> None:
+        """
+        将当前所有测试用例导出为 Markdown 表格文件。
+
+        Args:
+            filepath: 输出 Markdown 文件路径。
+
+        Raises:
+            OSError: 文件写入失败。
+        """
+        output_path = Path(filepath)
+        content = self._build_markdown_table()
+
+        try:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(content + "\n", encoding="utf-8")
+        except OSError as exc:
+            raise OSError(f"写入 Markdown 文件失败: {filepath}") from exc
+
 
 if __name__ == "__main__":
     manager = TestCaseManager()
@@ -177,9 +237,16 @@ if __name__ == "__main__":
     for case in manager.find_by_type("异常"):
         print(f"  {case.id}: {case.title}")
 
+    print("\n=== 按优先级统计 ===")
+    print(manager.count_by_priority())
+
     json_path = "docs/sample_test_cases.json"
     manager.save_to_json(json_path)
     print(f"\n已保存 {len(manager.cases)} 条用例到 {json_path}")
+
+    markdown_path = "docs/sample_test_cases.md"
+    manager.export_to_markdown(markdown_path)
+    print(f"已导出 Markdown 表格到 {markdown_path}")
 
     new_manager = TestCaseManager()
     new_manager.load_from_json(json_path)
