@@ -1,0 +1,52 @@
+[
+  {
+    "id": "TC-001",
+    "title": "测试场景1",
+    "steps": [
+      "步骤1",
+      "步骤2"
+    ],
+    "expected": "预期结果1",
+    "priority": "P0"
+  },
+  {
+    "id": "TC-002",
+    "title": "测试场景2",
+    "steps": [
+      "步骤1",
+      "步骤2"
+    ],
+    "expected": "预期结果2",
+    "priority": "P1"
+  },
+  {
+    "id": "TC-003",
+    "title": "测试场景3",
+    "steps": [
+      "步骤1",
+      "步骤2"
+    ],
+    "expected": "预期结果3",
+    "priority": "P1"
+  },
+  {
+    "id": "TC-004",
+    "title": "测试场景4",
+    "steps": [
+      "步骤1",
+      "步骤2"
+    ],
+    "expected": "预期结果4",
+    "priority": "P1"
+  },
+  {
+    "id": "TC-005",
+    "title": "测试场景5",
+    "steps": [
+      "步骤1",
+      "步骤2"
+    ],
+    "expected": "预期结果5",
+    "priority": "P1"
+  }
+]

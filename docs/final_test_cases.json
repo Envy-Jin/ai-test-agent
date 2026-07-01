@@ -1,0 +1,54 @@
+[
+  {
+    "id": "TC-001",
+    "title": "正常登录",
+    "steps": [
+      "打开登录页",
+      "输入正确手机号和密码",
+      "点击登录"
+    ],
+    "expected_result": "成功跳转首页",
+    "test_type": "功能",
+    "priority": "P0",
+    "preconditions": [
+      "用户已注册"
+    ],
+    "test_data": {},
+    "actual_result": null,
+    "passed": null
+  },
+  {
+    "id": "TC-002",
+    "title": "手机号格式错误",
+    "steps": [
+      "输入非法手机号",
+      "输入密码",
+      "点击登录"
+    ],
+    "expected_result": "提示手机号格式错误",
+    "test_type": "异常",
+    "priority": "P1",
+    "preconditions": [
+      "用户未登录"
+    ],
+    "test_data": {},
+    "actual_result": null,
+    "passed": null
+  },
+  {
+    "id": "TC-003",
+    "title": "密码连续错误5次锁定",
+    "steps": [
+      "连续5次输入错误密码"
+    ],
+    "expected_result": "账号锁定30分钟，提示锁定时间",
+    "test_type": "边界",
+    "priority": "P0",
+    "preconditions": [
+      "用户已注册"
+    ],
+    "test_data": {},
+    "actual_result": null,
+    "passed": null
+  }
+]
