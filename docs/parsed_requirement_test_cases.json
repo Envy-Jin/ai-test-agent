@@ -1,0 +1,583 @@
+{
+  "用户注册": [
+    {
+      "id": "TC-001",
+      "title": "用户注册-低于下限：密码长度8-20位且必须包含数字和字母",
+      "steps": [
+        "准备测试数据，边界值 = 7",
+        "针对约束「密码长度8-20位且必须包含数字和字母」构造输入并执行相关操作",
+        "记录系统实际响应并与预期结果对比"
+      ],
+      "expected_result": "不符合要求，应被拒绝",
+      "test_type": "边界",
+      "priority": "P1",
+      "preconditions": [
+        "功能模块：用户注册"
+      ],
+      "test_data": {
+        "feature": "用户注册",
+        "constraint": "密码长度8-20位且必须包含数字和字母",
+        "boundary_value": 7,
+        "boundary_label": "低于下限"
+      },
+      "actual_result": null,
+      "passed": null
+    },
+    {
+      "id": "TC-002",
+      "title": "用户注册-下限边界值：密码长度8-20位且必须包含数字和字母",
+      "steps": [
+        "准备测试数据，边界值 = 8",
+        "针对约束「密码长度8-20位且必须包含数字和字母」构造输入并执行相关操作",
+        "记录系统实际响应并与预期结果对比"
+      ],
+      "expected_result": "符合要求，应被接受",
+      "test_type": "边界",
+      "priority": "P1",
+      "preconditions": [
+        "功能模块：用户注册"
+      ],
+      "test_data": {
+        "feature": "用户注册",
+        "constraint": "密码长度8-20位且必须包含数字和字母",
+        "boundary_value": 8,
+        "boundary_label": "下限边界值"
+      },
+      "actual_result": null,
+      "passed": null
+    },
+    {
+      "id": "TC-003",
+      "title": "用户注册-略高于下限：密码长度8-20位且必须包含数字和字母",
+      "steps": [
+        "准备测试数据，边界值 = 9",
+        "针对约束「密码长度8-20位且必须包含数字和字母」构造输入并执行相关操作",
+        "记录系统实际响应并与预期结果对比"
+      ],
+      "expected_result": "符合要求，应被接受",
+      "test_type": "边界",
+      "priority": "P1",
+      "preconditions": [
+        "功能模块：用户注册"
+      ],
+      "test_data": {
+        "feature": "用户注册",
+        "constraint": "密码长度8-20位且必须包含数字和字母",
+        "boundary_value": 9,
+        "boundary_label": "略高于下限"
+      },
+      "actual_result": null,
+      "passed": null
+    },
+    {
+      "id": "TC-004",
+      "title": "用户注册-略低于上限：密码长度8-20位且必须包含数字和字母",
+      "steps": [
+        "准备测试数据，边界值 = 19",
+        "针对约束「密码长度8-20位且必须包含数字和字母」构造输入并执行相关操作",
+        "记录系统实际响应并与预期结果对比"
+      ],
+      "expected_result": "符合要求，应被接受",
+      "test_type": "边界",
+      "priority": "P1",
+      "preconditions": [
+        "功能模块：用户注册"
+      ],
+      "test_data": {
+        "feature": "用户注册",
+        "constraint": "密码长度8-20位且必须包含数字和字母",
+        "boundary_value": 19,
+        "boundary_label": "略低于上限"
+      },
+      "actual_result": null,
+      "passed": null
+    },
+    {
+      "id": "TC-005",
+      "title": "用户注册-上限边界值：密码长度8-20位且必须包含数字和字母",
+      "steps": [
+        "准备测试数据，边界值 = 20",
+        "针对约束「密码长度8-20位且必须包含数字和字母」构造输入并执行相关操作",
+        "记录系统实际响应并与预期结果对比"
+      ],
+      "expected_result": "符合要求，应被接受",
+      "test_type": "边界",
+      "priority": "P1",
+      "preconditions": [
+        "功能模块：用户注册"
+      ],
+      "test_data": {
+        "feature": "用户注册",
+        "constraint": "密码长度8-20位且必须包含数字和字母",
+        "boundary_value": 20,
+        "boundary_label": "上限边界值"
+      },
+      "actual_result": null,
+      "passed": null
+    },
+    {
+      "id": "TC-006",
+      "title": "用户注册-高于上限：密码长度8-20位且必须包含数字和字母",
+      "steps": [
+        "准备测试数据，边界值 = 21",
+        "针对约束「密码长度8-20位且必须包含数字和字母」构造输入并执行相关操作",
+        "记录系统实际响应并与预期结果对比"
+      ],
+      "expected_result": "不符合要求，应被拒绝",
+      "test_type": "边界",
+      "priority": "P1",
+      "preconditions": [
+        "功能模块：用户注册"
+      ],
+      "test_data": {
+        "feature": "用户注册",
+        "constraint": "密码长度8-20位且必须包含数字和字母",
+        "boundary_value": 21,
+        "boundary_label": "高于上限"
+      },
+      "actual_result": null,
+      "passed": null
+    },
+    {
+      "id": "TC-007",
+      "title": "用户注册-低于下限：年龄必须在1-150之间",
+      "steps": [
+        "准备测试数据，边界值 = 0",
+        "针对约束「年龄必须在1-150之间」构造输入并执行相关操作",
+        "记录系统实际响应并与预期结果对比"
+      ],
+      "expected_result": "不符合要求，应被拒绝",
+      "test_type": "边界",
+      "priority": "P1",
+      "preconditions": [
+        "功能模块：用户注册"
+      ],
+      "test_data": {
+        "feature": "用户注册",
+        "constraint": "年龄必须在1-150之间",
+        "boundary_value": 0,
+        "boundary_label": "低于下限"
+      },
+      "actual_result": null,
+      "passed": null
+    },
+    {
+      "id": "TC-008",
+      "title": "用户注册-下限边界值：年龄必须在1-150之间",
+      "steps": [
+        "准备测试数据，边界值 = 1",
+        "针对约束「年龄必须在1-150之间」构造输入并执行相关操作",
+        "记录系统实际响应并与预期结果对比"
+      ],
+      "expected_result": "符合要求，应被接受",
+      "test_type": "边界",
+      "priority": "P1",
+      "preconditions": [
+        "功能模块：用户注册"
+      ],
+      "test_data": {
+        "feature": "用户注册",
+        "constraint": "年龄必须在1-150之间",
+        "boundary_value": 1,
+        "boundary_label": "下限边界值"
+      },
+      "actual_result": null,
+      "passed": null
+    },
+    {
+      "id": "TC-009",
+      "title": "用户注册-略高于下限：年龄必须在1-150之间",
+      "steps": [
+        "准备测试数据，边界值 = 2",
+        "针对约束「年龄必须在1-150之间」构造输入并执行相关操作",
+        "记录系统实际响应并与预期结果对比"
+      ],
+      "expected_result": "符合要求，应被接受",
+      "test_type": "边界",
+      "priority": "P1",
+      "preconditions": [
+        "功能模块：用户注册"
+      ],
+      "test_data": {
+        "feature": "用户注册",
+        "constraint": "年龄必须在1-150之间",
+        "boundary_value": 2,
+        "boundary_label": "略高于下限"
+      },
+      "actual_result": null,
+      "passed": null
+    },
+    {
+      "id": "TC-010",
+      "title": "用户注册-略低于上限：年龄必须在1-150之间",
+      "steps": [
+        "准备测试数据，边界值 = 149",
+        "针对约束「年龄必须在1-150之间」构造输入并执行相关操作",
+        "记录系统实际响应并与预期结果对比"
+      ],
+      "expected_result": "符合要求，应被接受",
+      "test_type": "边界",
+      "priority": "P1",
+      "preconditions": [
+        "功能模块：用户注册"
+      ],
+      "test_data": {
+        "feature": "用户注册",
+        "constraint": "年龄必须在1-150之间",
+        "boundary_value": 149,
+        "boundary_label": "略低于上限"
+      },
+      "actual_result": null,
+      "passed": null
+    },
+    {
+      "id": "TC-011",
+      "title": "用户注册-上限边界值：年龄必须在1-150之间",
+      "steps": [
+        "准备测试数据，边界值 = 150",
+        "针对约束「年龄必须在1-150之间」构造输入并执行相关操作",
+        "记录系统实际响应并与预期结果对比"
+      ],
+      "expected_result": "符合要求，应被接受",
+      "test_type": "边界",
+      "priority": "P1",
+      "preconditions": [
+        "功能模块：用户注册"
+      ],
+      "test_data": {
+        "feature": "用户注册",
+        "constraint": "年龄必须在1-150之间",
+        "boundary_value": 150,
+        "boundary_label": "上限边界值"
+      },
+      "actual_result": null,
+      "passed": null
+    },
+    {
+      "id": "TC-012",
+      "title": "用户注册-高于上限：年龄必须在1-150之间",
+      "steps": [
+        "准备测试数据，边界值 = 151",
+        "针对约束「年龄必须在1-150之间」构造输入并执行相关操作",
+        "记录系统实际响应并与预期结果对比"
+      ],
+      "expected_result": "不符合要求，应被拒绝",
+      "test_type": "边界",
+      "priority": "P1",
+      "preconditions": [
+        "功能模块：用户注册"
+      ],
+      "test_data": {
+        "feature": "用户注册",
+        "constraint": "年龄必须在1-150之间",
+        "boundary_value": 151,
+        "boundary_label": "高于上限"
+      },
+      "actual_result": null,
+      "passed": null
+    },
+    {
+      "id": "TC-013",
+      "title": "用户注册-正向验证：同一手机号不可重复注册",
+      "steps": [
+        "准备测试数据，边界值 = N/A",
+        "针对约束「同一手机号不可重复注册」构造输入并执行相关操作",
+        "记录系统实际响应并与预期结果对比"
+      ],
+      "expected_result": "满足约束「同一手机号不可重复注册」时应被系统接受",
+      "test_type": "边界",
+      "priority": "P1",
+      "preconditions": [
+        "功能模块：用户注册"
+      ],
+      "test_data": {
+        "feature": "用户注册",
+        "constraint": "同一手机号不可重复注册",
+        "boundary_value": null,
+        "boundary_label": "正向验证"
+      },
+      "actual_result": null,
+      "passed": null
+    },
+    {
+      "id": "TC-014",
+      "title": "用户注册-反向验证：同一手机号不可重复注册",
+      "steps": [
+        "准备测试数据，边界值 = N/A",
+        "针对约束「同一手机号不可重复注册」构造输入并执行相关操作",
+        "记录系统实际响应并与预期结果对比"
+      ],
+      "expected_result": "违反约束「同一手机号不可重复注册」时应被系统拒绝或提示错误",
+      "test_type": "边界",
+      "priority": "P1",
+      "preconditions": [
+        "功能模块：用户注册"
+      ],
+      "test_data": {
+        "feature": "用户注册",
+        "constraint": "同一手机号不可重复注册",
+        "boundary_value": null,
+        "boundary_label": "反向验证"
+      },
+      "actual_result": null,
+      "passed": null
+    }
+  ],
+  "商品搜索": [
+    {
+      "id": "TC-001",
+      "title": "商品搜索-低于上限：搜索响应时间不超过2秒",
+      "steps": [
+        "准备测试数据，边界值 = 1",
+        "针对约束「搜索响应时间不超过2秒」构造输入并执行相关操作",
+        "记录系统实际响应并与预期结果对比"
+      ],
+      "expected_result": "符合要求，应被接受",
+      "test_type": "边界",
+      "priority": "P1",
+      "preconditions": [
+        "功能模块：商品搜索"
+      ],
+      "test_data": {
+        "feature": "商品搜索",
+        "constraint": "搜索响应时间不超过2秒",
+        "boundary_value": 1,
+        "boundary_label": "低于上限"
+      },
+      "actual_result": null,
+      "passed": null
+    },
+    {
+      "id": "TC-002",
+      "title": "商品搜索-边界值：搜索响应时间不超过2秒",
+      "steps": [
+        "准备测试数据，边界值 = 2",
+        "针对约束「搜索响应时间不超过2秒」构造输入并执行相关操作",
+        "记录系统实际响应并与预期结果对比"
+      ],
+      "expected_result": "符合要求，应被接受",
+      "test_type": "边界",
+      "priority": "P1",
+      "preconditions": [
+        "功能模块：商品搜索"
+      ],
+      "test_data": {
+        "feature": "商品搜索",
+        "constraint": "搜索响应时间不超过2秒",
+        "boundary_value": 2,
+        "boundary_label": "边界值"
+      },
+      "actual_result": null,
+      "passed": null
+    },
+    {
+      "id": "TC-003",
+      "title": "商品搜索-高于上限：搜索响应时间不超过2秒",
+      "steps": [
+        "准备测试数据，边界值 = 3",
+        "针对约束「搜索响应时间不超过2秒」构造输入并执行相关操作",
+        "记录系统实际响应并与预期结果对比"
+      ],
+      "expected_result": "不符合要求，应被拒绝",
+      "test_type": "边界",
+      "priority": "P1",
+      "preconditions": [
+        "功能模块：商品搜索"
+      ],
+      "test_data": {
+        "feature": "商品搜索",
+        "constraint": "搜索响应时间不超过2秒",
+        "boundary_value": 3,
+        "boundary_label": "高于上限"
+      },
+      "actual_result": null,
+      "passed": null
+    },
+    {
+      "id": "TC-004",
+      "title": "商品搜索-低于上限：搜索结果最多显示1000条",
+      "steps": [
+        "准备测试数据，边界值 = 999",
+        "针对约束「搜索结果最多显示1000条」构造输入并执行相关操作",
+        "记录系统实际响应并与预期结果对比"
+      ],
+      "expected_result": "符合要求，应被接受",
+      "test_type": "边界",
+      "priority": "P1",
+      "preconditions": [
+        "功能模块：商品搜索"
+      ],
+      "test_data": {
+        "feature": "商品搜索",
+        "constraint": "搜索结果最多显示1000条",
+        "boundary_value": 999,
+        "boundary_label": "低于上限"
+      },
+      "actual_result": null,
+      "passed": null
+    },
+    {
+      "id": "TC-005",
+      "title": "商品搜索-边界值：搜索结果最多显示1000条",
+      "steps": [
+        "准备测试数据，边界值 = 1000",
+        "针对约束「搜索结果最多显示1000条」构造输入并执行相关操作",
+        "记录系统实际响应并与预期结果对比"
+      ],
+      "expected_result": "符合要求，应被接受",
+      "test_type": "边界",
+      "priority": "P1",
+      "preconditions": [
+        "功能模块：商品搜索"
+      ],
+      "test_data": {
+        "feature": "商品搜索",
+        "constraint": "搜索结果最多显示1000条",
+        "boundary_value": 1000,
+        "boundary_label": "边界值"
+      },
+      "actual_result": null,
+      "passed": null
+    },
+    {
+      "id": "TC-006",
+      "title": "商品搜索-高于上限：搜索结果最多显示1000条",
+      "steps": [
+        "准备测试数据，边界值 = 1001",
+        "针对约束「搜索结果最多显示1000条」构造输入并执行相关操作",
+        "记录系统实际响应并与预期结果对比"
+      ],
+      "expected_result": "不符合要求，应被拒绝",
+      "test_type": "边界",
+      "priority": "P1",
+      "preconditions": [
+        "功能模块：商品搜索"
+      ],
+      "test_data": {
+        "feature": "商品搜索",
+        "constraint": "搜索结果最多显示1000条",
+        "boundary_value": 1001,
+        "boundary_label": "高于上限"
+      },
+      "actual_result": null,
+      "passed": null
+    }
+  ],
+  "订单管理": [
+    {
+      "id": "TC-001",
+      "title": "订单管理-正向验证：退款金额不超过订单原价",
+      "steps": [
+        "准备测试数据，边界值 = N/A",
+        "针对约束「退款金额不超过订单原价」构造输入并执行相关操作",
+        "记录系统实际响应并与预期结果对比"
+      ],
+      "expected_result": "满足约束「退款金额不超过订单原价」时应被系统接受",
+      "test_type": "边界",
+      "priority": "P1",
+      "preconditions": [
+        "功能模块：订单管理"
+      ],
+      "test_data": {
+        "feature": "订单管理",
+        "constraint": "退款金额不超过订单原价",
+        "boundary_value": null,
+        "boundary_label": "正向验证"
+      },
+      "actual_result": null,
+      "passed": null
+    },
+    {
+      "id": "TC-002",
+      "title": "订单管理-反向验证：退款金额不超过订单原价",
+      "steps": [
+        "准备测试数据，边界值 = N/A",
+        "针对约束「退款金额不超过订单原价」构造输入并执行相关操作",
+        "记录系统实际响应并与预期结果对比"
+      ],
+      "expected_result": "违反约束「退款金额不超过订单原价」时应被系统拒绝或提示错误",
+      "test_type": "边界",
+      "priority": "P1",
+      "preconditions": [
+        "功能模块：订单管理"
+      ],
+      "test_data": {
+        "feature": "订单管理",
+        "constraint": "退款金额不超过订单原价",
+        "boundary_value": null,
+        "boundary_label": "反向验证"
+      },
+      "actual_result": null,
+      "passed": null
+    },
+    {
+      "id": "TC-003",
+      "title": "订单管理-边界下侧：订单号唯一且长度为20位",
+      "steps": [
+        "准备测试数据，边界值 = 19",
+        "针对约束「订单号唯一且长度为20位」构造输入并执行相关操作",
+        "记录系统实际响应并与预期结果对比"
+      ],
+      "expected_result": "验证系统对低于边界值输入的处理",
+      "test_type": "边界",
+      "priority": "P1",
+      "preconditions": [
+        "功能模块：订单管理"
+      ],
+      "test_data": {
+        "feature": "订单管理",
+        "constraint": "订单号唯一且长度为20位",
+        "boundary_value": 19,
+        "boundary_label": "边界下侧"
+      },
+      "actual_result": null,
+      "passed": null
+    },
+    {
+      "id": "TC-004",
+      "title": "订单管理-边界值：订单号唯一且长度为20位",
+      "steps": [
+        "准备测试数据，边界值 = 20",
+        "针对约束「订单号唯一且长度为20位」构造输入并执行相关操作",
+        "记录系统实际响应并与预期结果对比"
+      ],
+      "expected_result": "验证系统对边界值输入的处理",
+      "test_type": "边界",
+      "priority": "P1",
+      "preconditions": [
+        "功能模块：订单管理"
+      ],
+      "test_data": {
+        "feature": "订单管理",
+        "constraint": "订单号唯一且长度为20位",
+        "boundary_value": 20,
+        "boundary_label": "边界值"
+      },
+      "actual_result": null,
+      "passed": null
+    },
+    {
+      "id": "TC-005",
+      "title": "订单管理-边界上侧：订单号唯一且长度为20位",
+      "steps": [
+        "准备测试数据，边界值 = 21",
+        "针对约束「订单号唯一且长度为20位」构造输入并执行相关操作",
+        "记录系统实际响应并与预期结果对比"
+      ],
+      "expected_result": "验证系统对高于边界值输入的处理",
+      "test_type": "边界",
+      "priority": "P1",
+      "preconditions": [
+        "功能模块：订单管理"
+      ],
+      "test_data": {
+        "feature": "订单管理",
+        "constraint": "订单号唯一且长度为20位",
+        "boundary_value": 21,
+        "boundary_label": "边界上侧"
+      },
+      "actual_result": null,
+      "passed": null
+    }
+  ]
+}

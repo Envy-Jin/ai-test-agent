@@ -10,6 +10,8 @@ import argparse
 import json
 import re
 import sys
+import glob
+import os
 from dataclasses import dataclass, field, asdict
 
 # ====== 数据结构 ======
@@ -120,6 +122,109 @@ def save_parsed_result(result: ParsedRequirement, output_path: str) -> None:
         json.dump(result_dict, f, ensure_ascii=False, indent=2)
 
 
+def save_parsed_result_markdown(result: ParsedRequirement, output_path: str) -> None:
+    """
+    将解析结果保存为 Markdown 格式
+
+    Args:
+        result: ParsedRequirement 对象
+        output_path: 输出文件路径
+    """
+    lines = []
+    lines.append(f"# 需求文档解析结果")
+    lines.append(f"\n> 来源：{result.source_file}")
+    lines.append(f"\n{result.summarize()}\n")
+
+    for f in result.features:
+        lines.append(f"\n## {f.feature}\n")
+
+        if f.sub_features:
+            lines.append("### 子功能\n")
+            for sf in f.sub_features:
+                lines.append(f"- {sf}")
+            lines.append("")
+
+        if f.constraints:
+            lines.append("### 约束条件\n")
+            lines.append("| # | 约束描述 |")
+            lines.append("|---|----------|")
+            for i, c in enumerate(f.constraints, 1):
+                lines.append(f"| {i} | {c} |")
+            lines.append("")
+
+    markdown_text = "\n".join(lines)
+    with open(output_path, "w", encoding="utf-8") as f_out:
+        f_out.write(markdown_text)
+    print(f"✅ Markdown 结果已保存到 {output_path}")
+
+
+def save_parsed_result_csv(result: ParsedRequirement, output_path: str) -> None:
+    """
+    将解析结果保存为 CSV 格式（每个功能一行）
+
+    Args:
+        result: ParsedRequirement 对象
+        output_path: 输出文件路径
+    """
+    import csv
+
+    with open(output_path, "w", encoding="utf-8", newline="") as f_out:
+        writer = csv.writer(f_out)
+        # 表头
+        writer.writerow(["功能名称", "子功能", "约束条件", "子功能数量", "约束数量"])
+        # 数据行
+        for f in result.features:
+            writer.writerow([
+                f.feature,
+                "; ".join(f.sub_features),
+                "; ".join(f.constraints),
+                len(f.sub_features),
+                len(f.constraints)
+            ])
+    print(f"✅ CSV 结果已保存到 {output_path}")
+
+def batch_parse(directory: str, output_dir: str = "docs", verbose: bool = False) -> list[str]:
+    """
+    批量解析目录下所有 .txt 需求文件
+
+    Args:
+        directory: 需求文件目录路径
+        output_dir: 输出文件目录
+        verbose: 是否显示详细输出
+    Returns:
+        成功解析的文件路径列表
+    """
+    txt_files = glob.glob(os.path.join(directory, "*.txt"))
+    if not txt_files:
+        print(f"⚠️  目录 {directory} 中没有 .txt 文件")
+        return []
+
+    print(f"找到 {len(txt_files)} 个需求文件")
+    success_files = []
+
+    for filepath in txt_files:
+        try:
+            text = read_requirement_file(filepath)
+            result = parse_requirement(text)
+            result.source_file = filepath
+
+            # 输出文件名 = 原文件名 + _parsed.json
+            basename = os.path.splitext(os.path.basename(filepath))[0]
+            output_path = os.path.join(output_dir, f"{basename}_parsed.json")
+
+            save_parsed_result(result, output_path)
+            success_files.append(filepath)
+
+            if verbose:
+                print(f"\n📄 {filepath}")
+                print(f"   {result.summarize()}")
+        except Exception as e:
+            print(f"❌ 解析失败：{filepath} — {type(e).__name__}: {e}")
+
+    print(f"\n✅ 成功解析 {len(success_files)}/{len(txt_files)} 个文件")
+    return success_files
+
+    
 # ====== 命令行入口 ======
 
 def main():
@@ -134,7 +239,9 @@ def main():
     )
     parser.add_argument(
         "input_file",
-        help="需求文档路径（.txt 格式）"
+        nargs="?",         # 0 或 1 个参数
+        default=None,
+        help="输入需求文件路径（批量模式 -b 下不需要）"
     )
     parser.add_argument(
         "-o", "--output",
@@ -147,9 +254,35 @@ def main():
         help="显示详细解析结果"
     )
 
+    parser.add_argument(
+    "-f", "--format",
+    choices=["json", "markdown", "csv"],
+    default="json",
+    help="输出格式：json / markdown / csv（默认: json）"
+    )
+
+    parser.add_argument(
+    "-t", "--test-cases",
+    action="store_true",
+    help="根据约束条件预生成边界值测试用例框架"
+    )
+
+    parser.add_argument(
+    "-b", "--batch",
+    help="批量解析目录下所有 .txt 文件（传入目录路径）"
+    )
+
     args = parser.parse_args()
 
+    if args.batch:
+        batch_parse(args.batch, output_dir="docs", verbose=args.verbose)
+    return
+
     # 1. 读取文件
+    # 单文件模式下，如果没有 input_file，报错更友好
+    if not args.input_file:
+        parser.error("单文件模式需要提供 input_file")
+        
     try:
         text = read_requirement_file(args.input_file)
         print(f"📄 读取文件：{args.input_file}（{len(text)} 字符）")
@@ -178,8 +311,43 @@ def main():
         print("\n" + "=" * 50)
 
     # 4. 保存结果
-    save_parsed_result(result, args.output)
-    print(f"\n✅ 结果已保存到：{args.output}")
+    # save_parsed_result(result, args.output)
+    # print(f"\n✅ 结果已保存到：{args.output}")
+
+    # 替换原来的 save_parsed_result(result, args.output) 调用：
+
+    # 根据格式自动调整输出文件后缀
+
+    output_path = args.output
+    if args.format == "markdown" and not output_path.endswith(".md"):
+        output_path = output_path.replace(".json", ".md")
+    elif args.format == "csv" and not output_path.endswith(".csv"):
+        output_path = output_path.replace(".json", ".csv")
+
+    # 按格式保存
+    if args.format == "json":
+        save_parsed_result(result, output_path)
+    elif args.format == "markdown":
+        save_parsed_result_markdown(result, output_path)
+    elif args.format == "csv":
+        save_parsed_result_csv(result, output_path)
+
+    print(f"\n✅ 结果已保存到：{output_path}（格式：{args.format}）")
+
+    # 测试用例预生成
+    if args.test_cases:
+        from test_case_pregenerator import generate_from_parsed_requirement
+        test_cases_dict = generate_from_parsed_requirement(result)
+        test_cases_output = args.output.replace(".json", "_test_cases.json")
+        import json
+        from dataclasses import asdict
+        with open(test_cases_output, "w", encoding="utf-8") as f:
+            # 将每个 TestCase 转为 dict
+            serializable = {}
+            for feature_name, cases in test_cases_dict.items():
+                serializable[feature_name] = [asdict(c) for c in cases]
+            json.dump(serializable, f, ensure_ascii=False, indent=2)
+        print(f"\n✅ 测试用例已保存到：{test_cases_output}")
 
 
 if __name__ == "__main__":

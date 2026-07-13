@@ -1,77 +1,91 @@
 # AI 测试辅助 Agent — 项目架构文档
 
-## 1. 项目结构树
-
-```
-ai_test_agent/
-├── .env                          # 环境变量（API Key，不提交 Git）
-├── .gitignore                    # Git 忽略规则
-├── README.md                     # 项目说明与快速开始
-├── requirements.txt              # Python 依赖清单
-├── check_env.py                  # 环境检查脚本（根目录工具）
-│
-├── docs/                         # 文档与运行产物
-│   ├── architecture.md           # 本架构文档
-│   ├── sample_requirement.txt    # 示例需求文档（用户登录）
-│   ├── requirement_analysis.json # 需求分析结果（JSON）
-│   ├── analysis_result.json      # 需求分析结果（JSON）
-│   ├── sample_test_cases.json    # 示例测试用例（JSON）
-│   ├── final_test_cases.json     # 完整测试用例集（JSON）
-│   ├── day4_test_cases.json      # Day4 练习产出（JSON）
-│   └── agent.log                 # Agent 运行日志
-│
-├── src/
-│   └── agent/                    # 核心业务模块包
-│       ├── __init__.py           # 包初始化与模块说明
-│       ├── requirement_analyzer.py  # 需求文档分析
-│       ├── test_case_model.py       # 测试用例数据模型与管理
-│       ├── day3_practice.py         # Day3 语法练习（推导式/类型/异常/IO）
-│       └── day4_practice.py         # Day4 语法练习（dataclass/JSON/HTTP/配置）
-│
-└── tests/                        # 单元测试目录（预留，待补充）
-```
-
-> 说明：`.venv/` 为本地虚拟环境，已在 `.gitignore` 中排除。
+> 最后更新：第 1 周完成。使用说明详见 [README.md](../README.md)。
 
 ---
 
-## 2. 模块功能说明
+## 1. 目录结构树
+
+```
+ai_test_agent/
+├── .env                              # 环境变量（API Key，不提交 Git）
+├── .gitignore                        # Git 忽略规则
+├── README.md                         # 项目说明、功能列表、命令行用法
+├── requirements.txt                  # Python 依赖清单
+├── check_env.py                      # 环境检查脚本
+│
+├── docs/                             # 文档、需求样本与运行产物
+│   ├── architecture.md               # 本架构文档
+│   ├── requirement.txt               # 主示例需求（电商：注册/搜索/订单）
+│   ├── requirement_ecommerce.txt     # 电商系统需求样本
+│   ├── requirement_education.txt     # 在线教育平台需求样本
+│   ├── requirement_social.txt        # 社交聊天应用需求样本
+│   ├── sample_requirement.txt        # 用户登录简版需求
+│   ├── parsed_requirement.json       # 解析结果（JSON）
+│   ├── parsed_requirement.md         # 解析结果（Markdown）
+│   ├── parsed_requirement.csv        # 解析结果（CSV）
+│   ├── parsed_requirement_test_cases.json  # 预生成边界用例
+│   ├── *_parsed.json                 # 各需求文件的批量解析产物
+│   ├── sample_test_cases.json        # 测试用例示例
+│   ├── sample_test_cases.md          # 测试用例 Markdown 导出
+│   └── final_test_cases.json         # 完整测试用例集
+│
+├── src/
+│   └── agent/                        # 核心业务模块包
+│       ├── __init__.py               # 包初始化
+│       ├── requirement_parser.py     # ★ 需求解析器（CLI 入口）
+│       ├── requirement_analyzer.py   # 需求文本统计分析
+│       ├── test_case_model.py        # ★ 测试用例数据模型与管理
+│       ├── test_case_pregenerator.py # ★ 边界值用例预生成器
+│       ├── data_generator.py         # 测试数据随机生成器
+│       ├── day3_practice.py          # Day3 学习练习
+│       ├── day4_practice.py          # Day4 学习练习
+│       ├── day6_practice.py          # Day6 正则练习
+│       └── bug_demo.py               # 故意含 Bug 的演示脚本
+│
+└── tests/                            # pytest 单元测试
+    ├── test_basic.py                 # pytest 入门练习
+    └── test_requirement_parser.py    # 需求解析器与输出格式测试
+```
+
+> `.venv/` 为本地虚拟环境，已在 `.gitignore` 中排除。
+
+---
+
+## 2. Python 文件功能说明
 
 ### 2.1 根目录
 
-| 文件 | 类型 | 功能 |
-|------|------|------|
-| `check_env.py` | 工具脚本 | 检查 Python 版本、虚拟环境、`.env`、`requirements.txt` 及核心依赖（`requests`、`dotenv`）是否就绪 |
-| `requirements.txt` | 配置 | 项目依赖：`google-generativeai`、`python-dotenv`、`requests`、`pydantic` 等 |
-| `.env` | 配置 | 存放 `GEMINI_API_KEY`、`LANGCHAIN_API_KEY` 等敏感配置 |
-| `README.md` | 文档 | 项目简介、技术栈、快速开始指南 |
-
-### 2.2 `src/agent/` 核心包
-
-| 模块 | 功能 | 主要导出 |
+| 文件 | 类型 | 功能说明 |
 |------|------|----------|
-| `__init__.py` | Agent 核心包入口，声明模块用途 | — |
-| `requirement_analyzer.py` | 读取 `.txt` 需求文档，统计字数/行数，提取含规则关键词的行，输出 JSON 分析结果 | `analyze_requirement()` |
-| `test_case_model.py` | 测试用例领域模型：`TestCase` dataclass + `TestCaseManager` 增删查、JSON 持久化、按优先级统计 | `TestCase`, `TestCaseManager` |
-| `day3_practice.py` | **学习模块**：列表/字典推导式、类型注解、`TypedDict`、`try/except`、文件读写、需求分析器调用示例 | 练习代码（非生产入口） |
-| `day4_practice.py` | **学习模块**：dataclass 序列化、LLM JSON 解析、环境变量配置、`requests` HTTP 测试、集成 `TestCaseManager` | 练习代码 + 里程碑演示 |
+| `check_env.py` | 工具脚本 | 检查 Python 版本、虚拟环境、`.env`、`requirements.txt`，验证 `requests` 和 `dotenv` 是否可导入 |
 
-### 2.3 `docs/` 数据与文档
+### 2.2 `src/agent/` — 生产模块
 
-| 文件 | 用途 |
-|------|------|
-| `sample_requirement.txt` | 用户登录功能的示例需求，供 `requirement_analyzer` 分析 |
-| `*_analysis.json` | 需求分析结构化输出 |
-| `*_test_cases.json` | 测试用例 JSON 持久化文件 |
-| `agent.log` | 运行日志 |
-
-### 2.4 规划中的能力（README 已描述，代码待扩展）
-
-| 能力 | 目标技术 | 当前状态 |
+| 文件 | 功能说明 | 主要导出 |
 |------|----------|----------|
-| 测试用例 AI 生成 | Gemini + LangChain | 占位/练习代码，未独立成模块 |
-| Bug 分析 Agent | Gemini | 待实现 |
-| 接口自动化测试 | `requests` | `day4_practice.py` 中有 API 测试练习代码 |
+| `__init__.py` | Agent 核心包入口，声明模块用途 | — |
+| `requirement_parser.py` | **需求解析核心**：按「XX功能：」分段，提取子功能与约束条件；支持 CLI 单文件/批量解析；输出 JSON / Markdown / CSV；可选 `-t` 触发用例预生成 | `Feature`, `ParsedRequirement`, `parse_requirement()`, `batch_parse()`, `main()` |
+| `requirement_analyzer.py` | **需求文本分析**：统计字数/行数，用列表推导式提取含关键词（必须、不少于等）的规则行，写入 JSON | `analyze_requirement()` |
+| `test_case_model.py` | **测试用例管理**：`TestCase` dataclass；`TestCaseManager` 提供增删查、按优先级/类型筛选、统计、JSON 读写、Markdown 表格导出 | `TestCase`, `TestCaseManager` |
+| `test_case_pregenerator.py` | **用例预生成**：根据 `ParsedRequirement` 为每条约束生成边界值测试框架；支持区间（1-150）、下限（不少于）、上限（不超过）等策略 | `generate_boundary_cases()`, `generate_from_parsed_requirement()` |
+| `data_generator.py` | **测试数据生成**：按字段定义批量生成随机字符串、邮箱、手机号、数字等测试数据 | `TestDataGenerator` |
+
+### 2.3 `src/agent/` — 学习 / 演示模块
+
+| 文件 | 功能说明 |
+|------|----------|
+| `day3_practice.py` | Day3 练习：推导式、类型注解、`TypedDict`、`try/except`、文件读写、10 道练习题 |
+| `day4_practice.py` | Day4 练习：dataclass 序列化、LLM JSON 安全解析、环境变量配置、`requests` HTTP 测试；集成 `TestCaseManager` 里程碑演示 |
+| `day6_practice.py` | Day6 练习：正则表达式（邮箱提取、数字提取、功能名/子功能分离），含 `Feature` dataclass 与 JSON 持久化练习 |
+| `bug_demo.py` | 故意包含 Bug 的短脚本，用于演示调试流程（访问不存在的属性） |
+
+### 2.4 `tests/` — 单元测试
+
+| 文件 | 功能说明 |
+|------|----------|
+| `test_basic.py` | pytest 入门：断言、异常、`pytest.raises` 等基础用法练习 |
+| `test_requirement_parser.py` | 需求解析器测试：功能分段、子功能/约束提取、完整解析、Markdown/CSV 输出、数字提取 |
 
 ---
 
@@ -81,165 +95,178 @@ ai_test_agent/
 
 ```mermaid
 flowchart TB
-    subgraph root [根目录]
-        check_env[check_env.py]
-        dotenv_file[.env]
-        req_txt[requirements.txt]
+    subgraph input [输入]
+        req_txt["需求文档 .txt"]
     end
 
-    subgraph docs_layer [docs/]
-        sample_req[sample_requirement.txt]
-        analysis_json[requirement_analysis.json]
-        cases_json[final_test_cases.json]
+    subgraph core [核心处理链]
+        parser["requirement_parser.py"]
+        pregen["test_case_pregenerator.py"]
+        model["test_case_model.py"]
     end
 
-    subgraph agent_pkg [src/agent/]
-        init[__init__.py]
-        analyzer[requirement_analyzer.py]
-        model[test_case_model.py]
-        day3[day3_practice.py]
-        day4[day4_practice.py]
+    subgraph auxiliary [辅助模块]
+        analyzer["requirement_analyzer.py"]
+        datagen["data_generator.py"]
     end
 
-    subgraph external [外部依赖]
-        json_lib[json / pathlib]
-        dataclass_lib[dataclasses]
-        dotenv_lib[python-dotenv]
-        requests_lib[requests]
-        gemini[google-generativeai]
+    subgraph output [输出产物]
+        json_out["*_parsed.json"]
+        md_out["*_parsed.md"]
+        csv_out["*_parsed.csv"]
+        cases_out["*_test_cases.json"]
+        cases_md["*.md 用例表格"]
     end
 
-    sample_req -->|读取| analyzer
-    analyzer -->|写入| analysis_json
+    subgraph tests_layer [测试]
+        test_parser["test_requirement_parser.py"]
+    end
+
+    subgraph practice [学习模块 - 独立]
+        day3["day3_practice.py"]
+        day4["day4_practice.py"]
+        day6["day6_practice.py"]
+    end
+
+    req_txt -->|read_requirement_file| parser
+    parser -->|parse_requirement| json_out
+    parser -->|save markdown/csv| md_out
+    parser -->|save markdown/csv| csv_out
+    parser -->|-t 预生成| pregen
+    pregen -->|import Feature/ParsedRequirement| parser
+    pregen -->|import TestCase| model
+    pregen --> cases_out
+    model -->|save_to_json / export_to_markdown| cases_out
+    model --> cases_md
+
+    req_txt -.->|独立分析| analyzer
+    analyzer -.-> json_out
+
+    test_parser -->|测试| parser
+    test_parser -->|测试| pregen
+
+    day4 -.->|演示集成| model
+    day6 -.->|独立练习| day6
     day3 -.->|可选调用| analyzer
-
-    model -->|读写| cases_json
-    day4 -->|import| model
-
-    analyzer --> json_lib
-    model --> json_lib
-    model --> dataclass_lib
-    day4 --> dotenv_lib
-    day4 --> requests_lib
-    day4 --> dotenv_file
-    day4 --> model
-
-    check_env --> dotenv_file
-    check_env --> req_txt
-
-    gemini -.->|规划中| day4
 ```
 
-**图例：** 实线 = 已实现依赖；虚线 = 可选或规划中。
+**图例：** 实线 = 生产链路依赖；虚线 = 辅助/学习/可选依赖。
 
 ### 3.2 模块间依赖表
 
-| 调用方 | 被依赖方 | 关系说明 |
+| 调用方 | 被依赖方 | 依赖类型 |
 |--------|----------|----------|
-| `day3_practice.py` | `requirement_analyzer.py` | 可选（代码中已注释），演示需求分析流程 |
-| `day4_practice.py` | `test_case_model.py` | 直接 import，演示用例管理与 JSON 持久化 |
-| `requirement_analyzer.py` | — | **独立模块**，仅依赖标准库 |
-| `test_case_model.py` | — | **独立模块**，仅依赖标准库 |
-| `check_env.py` | — | **独立脚本**，不依赖 `src/agent` |
-| `day3_practice.py` | `day4_practice.py` | 无依赖（并列学习模块） |
+| `requirement_parser.py` | `test_case_pregenerator.py` | CLI `-t` 时动态 import |
+| `test_case_pregenerator.py` | `requirement_parser.py` | 使用 `Feature`, `ParsedRequirement` |
+| `test_case_pregenerator.py` | `test_case_model.py` | 使用 `TestCase` |
+| `day4_practice.py` | `test_case_model.py` | 里程碑演示 |
+| `bug_demo.py` | `test_case_model.py` | Bug 演示 |
+| `test_requirement_parser.py` | `requirement_parser.py` | 单元测试 |
+| `test_requirement_parser.py` | `test_case_pregenerator.py` | 数字提取测试 |
+| `requirement_analyzer.py` | — | **独立**，仅标准库 |
+| `test_case_model.py` | — | **独立**，仅标准库 |
+| `data_generator.py` | — | **独立**，仅标准库 |
+| `check_env.py` | — | **独立**，不依赖 `src/agent` |
 
-### 3.3 典型数据流
+### 3.3 依赖分层
 
 ```
-需求文档 (.txt)
-    │
-    ▼  analyze_requirement()
-需求分析结果 (.json)          TestCase 对象
-    │                              │
-    │                              ▼  save_to_json()
-    │                         测试用例文件 (.json)
-    │                              │
-    └──────────► (未来) Gemini Agent ◄── load_from_json()
-                      生成/补充用例
+┌─────────────────────────────────────────────┐
+│  CLI 入口：requirement_parser.main()         │
+├─────────────────────────────────────────────┤
+│  业务层：test_case_pregenerator              │
+│          test_case_model                     │
+├─────────────────────────────────────────────┤
+│  解析层：requirement_parser                  │
+│          requirement_analyzer（并行独立）     │
+├─────────────────────────────────────────────┤
+│  工具层：data_generator / check_env          │
+├─────────────────────────────────────────────┤
+│  标准库：re, json, dataclasses, argparse    │
+└─────────────────────────────────────────────┘
 ```
 
 ---
 
-## 4. 如何使用本项目
+## 4. 数据流图
 
-### 4.1 环境准备
+### 4.1 主流程：需求文档 → 解析 → 输出
 
-```bash
-# 1. 进入项目目录
-cd ai_test_agent
+```mermaid
+flowchart LR
+    A["📝 需求文档\n*.txt"] --> B["read_requirement_file()"]
+    B --> C["parse_requirement()"]
+    C --> D["ParsedRequirement"]
 
-# 2. 创建并激活虚拟环境（Windows PowerShell）
-python -m venv .venv
-.venv\Scripts\Activate.ps1
+    D --> E1["save_parsed_result()\n→ JSON"]
+    D --> E2["save_parsed_result_markdown()\n→ Markdown"]
+    D --> E3["save_parsed_result_csv()\n→ CSV"]
 
-# 3. 安装依赖
-pip install -r requirements.txt
+    D --> F["generate_from_parsed_requirement()"]
+    F --> G["dict[str, list[TestCase]]"]
+    G --> H["*_test_cases.json"]
 
-# 4. 配置 API Key（编辑 .env）
-# GEMINI_API_KEY=your_api_key_here
-# LANGCHAIN_API_KEY=your_key_here
-
-# 5. 验证环境
-python check_env.py
+    D --> I["TestCaseManager\n（手动/API 管理）"]
+    I --> J1["save_to_json()"]
+    I --> J2["export_to_markdown()"]
 ```
 
-### 4.2 需求文档分析
+### 4.2 逐步数据变换
 
-```bash
-# 在项目根目录执行
-python -c "
-from src.agent.requirement_analyzer import analyze_requirement
-result = analyze_requirement(
-    'docs/sample_requirement.txt',
-    'docs/requirement_analysis.json',
-)
-print(result)
-"
+| 步骤 | 输入 | 处理 | 输出数据结构 |
+|------|------|------|-------------|
+| 1. 读取 | `docs/requirement.txt` | `read_requirement_file()` | 原始文本 `str` |
+| 2. 分段 | 原始文本 | `split_by_features()` | `[(功能名, 描述), ...]` |
+| 3. 提取 | 功能描述 | `extract_sub_features()` + `extract_constraints()` | 子功能列表 + 约束列表 |
+| 4. 组装 | 分段结果 | `parse_requirement()` | `ParsedRequirement` 对象 |
+| 5a. 输出 JSON | `ParsedRequirement` | `save_parsed_result()` | `*_parsed.json` |
+| 5b. 输出 MD/CSV | `ParsedRequirement` | `save_*_markdown/csv()` | `*_parsed.md` / `*.csv` |
+| 6. 预生成 | `ParsedRequirement` | `generate_from_parsed_requirement()` | 按功能分组的 `TestCase` 列表 |
+| 7. 持久化 | `TestCase` 列表 | `json.dump(asdict(...))` | `*_test_cases.json` |
+
+### 4.3 `ParsedRequirement` 数据结构
+
+```
+ParsedRequirement
+├── features: list[Feature]
+│   └── Feature
+│       ├── feature: str          # 功能名称，如 "用户注册"
+│       ├── sub_features: list    # ["支持手机号注册", "需要短信验证码验证"]
+│       ├── constraints: list     # ["密码不少于8位", "年龄必须在1-150之间"]
+│       └── raw_text: str         # 原始描述文本
+├── source_file: str
+├── total_features: int
+└── total_constraints: int
 ```
 
-**输出字段：** `filepath`、`char_count`、`line_count`、`keywords`、`keyword_lines`
+### 4.4 边界用例预生成数据流
 
-### 4.3 测试用例管理
-
-```bash
-# 运行内置示例（添加用例 → 查询 → 保存 → 加载）
-python src/agent/test_case_model.py
+```
+约束条件 "年龄必须在1-150之间"
+    │
+    ▼  _extract_range()  →  (1, 150)
+    ▼  _build_range_boundary_specs()
+    │
+    ├── TestCase(boundary_value=0,   label="低于下限")
+    ├── TestCase(boundary_value=1,   label="下限边界值")
+    ├── TestCase(boundary_value=2,   label="略高于下限")
+    ├── TestCase(boundary_value=149, label="略低于上限")
+    ├── TestCase(boundary_value=150, label="上限边界值")
+    └── TestCase(boundary_value=151, label="高于上限")
 ```
 
-**代码调用示例：**
+### 4.5 批量处理流程
 
-```python
-from src.agent.test_case_model import TestCase, TestCaseManager
-
-manager = TestCaseManager()
-manager.add_case(TestCase(
-    id="TC-001",
-    title="用户登录正常流程",
-    steps=["打开登录页", "输入账号密码", "点击登录"],
-    expected_result="跳转首页",
-    priority="P0",
-))
-print(manager.find_by_priority("P0"))
-print(manager.count_by_priority())   # {"P0": 1}
-manager.save_to_json("docs/final_test_cases.json")
 ```
-
-### 4.4 学习模块运行
-
-| 命令 | 说明 |
-|------|------|
-| `python src/agent/day3_practice.py` | Day3 练习（需取消注释对应章节） |
-| `python src/agent/day4_practice.py` | Day4 练习 + TestCaseManager 里程碑演示 |
-
-> 练习文件中大量代码默认注释，按需取消注释后运行。
-
-### 4.5 推荐工作流
-
-1. 用 `check_env.py` 确认环境正常  
-2. 在 `docs/sample_requirement.txt` 编写或粘贴需求  
-3. 调用 `analyze_requirement()` 提取规则行  
-4. 用 `TestCaseManager` 管理/持久化测试用例  
-5. （后续）接入 Gemini，基于需求与分析结果自动生成用例  
+docs/*.txt
+    │
+    ▼  batch_parse("docs/")
+    │
+    ├── requirement.txt          → docs/requirement_parsed.json
+    ├── requirement_ecommerce.txt → docs/requirement_ecommerce_parsed.json
+    ├── requirement_education.txt → docs/requirement_education_parsed.json
+    └── requirement_social.txt    → docs/requirement_social_parsed.json
+```
 
 ---
 
@@ -247,16 +274,19 @@ manager.save_to_json("docs/final_test_cases.json")
 
 | 原则 | 说明 |
 |------|------|
-| 模块化 | 需求分析（`requirement_analyzer`）与用例管理（`test_case_model`）相互独立 |
-| 数据驱动 | 需求、用例、分析结果均以 JSON/TXT 文件交换，便于 Agent 读写 |
-| 渐进式 | `day3/day4_practice` 为学习代码，核心能力逐步沉淀到独立模块 |
-| 类型安全 | 核心模块使用 dataclass + 类型注解，降低测试数据出错概率 |
+| 单一入口 | `requirement_parser.py` 作为 CLI 主入口，串联解析与预生成 |
+| 模块解耦 | 解析器、用例模型、预生成器可独立 import 和测试 |
+| 数据驱动 | 全流程以 `.txt` 输入、`.json/.md/.csv` 输出，便于人工审查和 Agent 读写 |
+| 渐进式沉淀 | 学习代码（`day*_practice.py`）与生产模块分离，成熟能力迁入独立文件 |
+| 可测试 | 核心解析逻辑均有 pytest 覆盖，支持 `-v` 详细输出 |
 
 ---
 
-## 6. 后续扩展建议
+## 6. 后续扩展（第 2 周规划）
 
-- 新增 `src/agent/llm/`：封装 Gemini 调用  
-- 新增 `src/agent/agents/`：LangChain Agent 编排（用例生成、Bug 分析）  
-- 补充 `tests/`：为 `requirement_analyzer`、`test_case_model` 编写 pytest 用例  
-- 统一 CLI 入口：如 `python -m src.agent.cli analyze / generate`
+| 方向 | 计划 |
+|------|------|
+| LLM 接入 | 新增 `src/agent/llm/`，封装 Gemini API |
+| Agent 编排 | 新增 `src/agent/agents/`，LangChain 驱动用例生成与 Bug 分析 |
+| 统一 CLI | `python -m src.agent.cli analyze / generate` |
+| 测试补全 | 为 `test_case_pregenerator`、`test_case_model` 补充 pytest |
