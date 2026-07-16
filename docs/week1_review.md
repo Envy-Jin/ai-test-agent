@@ -47,3 +47,15 @@ argparse 命令行参数
 - 学习 Gemini API 调用
 - 学习 Prompt 工程技巧
 - 用 AI 真正生成测试用例（而不只是预生成框架）
+
+## 第 1 周收官确认
+
+- [x] Cursor 能熟练使用 Tab 补全和 Ctrl+K/L
+- [x] 能独立创建 Python 虚拟环境和项目结构
+- [x] 能用 Python 处理字符串、字典、文件、JSON
+- [x] Git 提交流程熟练
+- [x] 需求解析命令行工具完成并可运行
+- [x] pytest 单元测试覆盖核心功能
+- [x] 项目文档完善（README + 架构文档）
+
+第 1 周完成！🎉 准备进入第 2 周：Gemini API + Prompt 工程
