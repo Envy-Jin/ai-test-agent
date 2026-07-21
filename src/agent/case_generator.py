@@ -13,6 +13,7 @@ from google import genai
 from google.genai import types
 import os
 import json
+from pathlib import Path
 from dotenv import load_dotenv
 from case_schema import TestCaseCollection, TestCase
 
@@ -113,6 +114,8 @@ class CaseGenerator:
     def to_markdown(self, collection: TestCaseCollection) -> str:
         """把用例集合转为 Markdown 表格"""
         lines = [f"# {collection.feature_name} 测试用例\n"]
+        if collection.analysis_summary:
+            lines.append(f"> **分析摘要：** {collection.analysis_summary}\n")
         lines.append("| ID | 类型 | 优先级 | 标题 | 步骤 | 预期结果 |")
         lines.append("|----|------|--------|------|------|----------|")
         for tc in collection.test_cases:
@@ -121,6 +124,41 @@ class CaseGenerator:
                 f"| {tc.id} | {tc.type} | {tc.priority} | {tc.title} | {steps} | {tc.expected} |"
             )
         return "\n".join(lines)
+
+    def save_to_markdown(self, collection: TestCaseCollection, filepath: str | Path) -> Path:
+        """
+        将用例集合保存为 Markdown 文档。
+
+        Args:
+            collection: 用例集合
+            filepath: 输出文件路径
+
+        Returns:
+            写入文件的 Path 对象
+        """
+        output_path = Path(filepath)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(self.to_markdown(collection), encoding="utf-8")
+        return output_path
+
+    def save_to_json(self, collection: TestCaseCollection, filepath: str | Path) -> Path:
+        """
+        将用例集合保存为 JSON 文件。
+
+        Args:
+            collection: 用例集合
+            filepath: 输出文件路径
+
+        Returns:
+            写入文件的 Path 对象
+        """
+        output_path = Path(filepath)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(
+            collection.model_dump_json(indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        return output_path
 
 
 # ============================================================
@@ -150,11 +188,26 @@ if __name__ == "__main__":
     print(f"类型分布: {types_count}")
 
     # 打印 Markdown
-    print("\n" + gen.to_markdown(collection))
+    markdown_text = gen.to_markdown(collection)
+    print("\n" + markdown_text)
+
+    # 保存为文档（Markdown + JSON）
+    docs_dir = Path(__file__).resolve().parents[2] / "docs"
+    md_path = gen.save_to_markdown(collection, docs_dir / "generated_test_cases.md")
+    json_path = gen.save_to_json(collection, docs_dir / "generated_test_cases.json")
+    print(f"\n已保存 Markdown: {md_path}")
+    print(f"已保存 JSON:     {json_path}")
 
     # 迭代优化
     print("\n\n--- 迭代优化：补充安全测试 ---")
     supplement = gen.refine(collection, "请补充 SQL注入、XSS、暴力破解相关的安全性测试用例说明")
     print(supplement[:500])
+
+    supplement_path = docs_dir / "generated_test_cases_supplement.md"
+    supplement_path.write_text(
+        f"# {collection.feature_name} — 迭代补充说明\n\n{supplement}",
+        encoding="utf-8",
+    )
+    print(f"\n已保存补充说明: {supplement_path}")
 
     print("\n✅ CaseGenerator 测试通过！")    

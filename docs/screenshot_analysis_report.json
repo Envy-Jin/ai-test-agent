@@ -1,0 +1,154 @@
+{
+  "page_name": "力扣登录/注册页",
+  "page_description": "提供手机号验证码登录、第三方登录及账号密码登录入口的页面",
+  "analysis_summary": "页面采用居中卡片式布局，包含手机号与验证码输入框、登录/注册按钮、第三方登录图标及协议链接。顶部有导航栏，底部有页脚信息。",
+  "elements": [
+    {
+      "element_id": "EL001",
+      "element_type": "输入框",
+      "label": "手机号",
+      "location": "登录卡片中部",
+      "state": "正常"
+    },
+    {
+      "element_id": "EL002",
+      "element_type": "按钮",
+      "label": "获取验证码",
+      "location": "验证码输入框右侧",
+      "state": "正常"
+    },
+    {
+      "element_id": "EL003",
+      "element_type": "按钮",
+      "label": "登录/注册",
+      "location": "登录卡片中部",
+      "state": "正常"
+    },
+    {
+      "element_id": "EL004",
+      "element_type": "链接",
+      "label": "账号密码登录",
+      "location": "登录卡片中部",
+      "state": "正常"
+    },
+    {
+      "element_id": "EL005",
+      "element_type": "链接",
+      "label": "用户协议",
+      "location": "登录卡片底部",
+      "state": "正常"
+    },
+    {
+      "element_id": "EL006",
+      "element_type": "链接",
+      "label": "隐私协议",
+      "location": "登录卡片底部",
+      "state": "正常"
+    }
+  ],
+  "test_cases": [
+    {
+      "id": "TC001",
+      "title": "手机号验证码正常登录",
+      "type": "正向",
+      "priority": "P0",
+      "target_element_id": "EL003",
+      "target_element": "登录/注册",
+      "test_scope": "UI可测",
+      "steps": [
+        "输入有效手机号",
+        "点击获取验证码",
+        "输入正确验证码",
+        "点击登录/注册"
+      ],
+      "expected": "登录成功并跳转至首页"
+    },
+    {
+      "id": "TC002",
+      "title": "手机号为空提交",
+      "type": "边界",
+      "priority": "P1",
+      "target_element_id": "EL001",
+      "target_element": "手机号",
+      "test_scope": "UI可测",
+      "steps": [
+        "不输入手机号",
+        "点击登录/注册"
+      ],
+      "expected": "提示手机号不能为空"
+    },
+    {
+      "id": "TC003",
+      "title": "手机号少于11位提交",
+      "type": "边界",
+      "priority": "P1",
+      "target_element_id": "EL001",
+      "target_element": "手机号",
+      "test_scope": "UI可测",
+      "steps": [
+        "输入10位数字",
+        "点击登录/注册"
+      ],
+      "expected": "提示手机号格式错误"
+    },
+    {
+      "id": "TC004",
+      "title": "手机号刚好11位提交",
+      "type": "边界",
+      "priority": "P1",
+      "target_element_id": "EL001",
+      "target_element": "手机号",
+      "test_scope": "UI可测",
+      "steps": [
+        "输入11位数字",
+        "点击登录/注册"
+      ],
+      "expected": "校验通过，进入下一步"
+    },
+    {
+      "id": "TC005",
+      "title": "手机号超过11位提交",
+      "type": "边界",
+      "priority": "P1",
+      "target_element_id": "EL001",
+      "target_element": "手机号",
+      "test_scope": "UI可测",
+      "steps": [
+        "输入12位数字",
+        "点击登录/注册"
+      ],
+      "expected": "输入框限制输入或提示格式错误"
+    },
+    {
+      "id": "TC006",
+      "title": "点击用户协议链接",
+      "type": "交互",
+      "priority": "P2",
+      "target_element_id": "EL005",
+      "target_element": "用户协议",
+      "test_scope": "UI可测",
+      "steps": [
+        "点击用户协议"
+      ],
+      "expected": "跳转至用户协议详情页"
+    },
+    {
+      "id": "TC007",
+      "title": "断网状态下点击登录",
+      "type": "异常",
+      "priority": "P1",
+      "target_element_id": "EL003",
+      "target_element": "登录/注册",
+      "test_scope": "需环境模拟",
+      "steps": [
+        "断开网络",
+        "点击登录/注册"
+      ],
+      "expected": "提示网络连接异常"
+    }
+  ],
+  "visual_issues": [
+    "登录卡片右上角的扫码登录图标与卡片边框间距较紧凑",
+    "底部协议文字颜色较浅，可能存在对比度不足的可用性风险"
+  ]
+}

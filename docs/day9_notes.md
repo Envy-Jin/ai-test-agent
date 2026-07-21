@@ -41,7 +41,7 @@
 - 保留 Prompt 版本
 
 ## 踩坑记录
-（记录今天遇到的问题和解决方法）
+ - httpx.ConnectError: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol - 先试直接重跑，大概率就好了。如果频繁出现，加上重试逻辑和请求间隔就能稳定解决。
 
 ## 对比 Day 8 的进步
 - Day 8：能让 AI 输出 JSON，但格式不稳定

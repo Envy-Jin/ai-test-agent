@@ -137,3 +137,125 @@ def build_refine_context(
 def build_refine_instruction(instruction: str) -> str:
     """构建 refine 的追问指令"""
     return REFINE_INSTRUCTION_TEMPLATE.format(instruction=instruction)
+
+
+# ============================================================
+# UI 截图分析（Day 10）
+# ============================================================
+
+SYSTEM_UI_ANALYST = (
+    "你是一名有 10 年经验的资深软件测试工程师，擅长 UI 测试和可用性测试。"
+    "你只能根据截图中实际可见的内容进行分析，不会臆造看不见的元素。"
+    "你能识别按钮、输入框、链接、Tab、第三方登录图标、二维码、协议链接等常见 UI 模式，"
+    "并基于识别结果生成覆盖正向、边界、异常、视觉、交互的 UI 测试用例。"
+    "对于每个数据约束（长度、数值范围、格式等），你必须同时覆盖「刚好满足」和「刚好不满足」两个方向，"
+    "不能只写一个方向的边界用例。"
+    "例如手机号是 11 位数字，你必须同时生成：恰好 11 位（满足）、少于 11 位（不满足）、多于 11 位（不满足）。"
+    "对于断网、权限等无法从截图验证的场景，必须标注 test_scope 为「需环境模拟」。"
+)
+
+FEW_SHOT_SCREENSHOT = """
+【示例输出结构】（字段名必须一致）
+{
+  "page_name": "用户登录页",
+  "page_description": "手机号验证码登录页面",
+  "analysis_summary": "中部为登录表单，含手机号与验证码输入；底部为协议链接。",
+  "elements": [
+    {
+      "element_id": "EL001",
+      "element_type": "输入框",
+      "label": "手机号",
+      "location": "表单区上部",
+      "state": "正常"
+    },
+    {
+      "element_id": "EL002",
+      "element_type": "按钮",
+      "label": "登录",
+      "location": "表单区下部",
+      "state": "置灰"
+    }
+  ],
+  "test_cases": [
+    {
+      "id": "TC001",
+      "title": "手机号验证码正常登录",
+      "type": "正向",
+      "priority": "P0",
+      "target_element_id": "EL002",
+      "target_element": "登录",
+      "test_scope": "UI可测",
+      "steps": ["输入11位有效手机号", "输入验证码", "点击登录"],
+      "expected": "登录成功并跳转"
+    },
+    {
+      "id": "TC002",
+      "title": "空手机号提交",
+      "type": "边界",
+      "priority": "P1",
+      "target_element_id": "EL001",
+      "target_element": "手机号",
+      "test_scope": "UI可测",
+      "steps": ["不输入手机号", "点击登录"],
+      "expected": "提示手机号不能为空或按钮保持置灰"
+    },
+    {
+      "id": "TC003",
+      "title": "手机号少于11位",
+      "type": "边界",
+      "priority": "P1",
+      "target_element_id": "EL001",
+      "target_element": "手机号",
+      "test_scope": "UI可测",
+      "steps": ["在手机号框输入10位数字", "点击登录"],
+      "expected": "提示手机号格式错误或按钮保持置灰"
+    },
+    {
+      "id": "TC004",
+      "title": "手机号多于11位",
+      "type": "边界",
+      "priority": "P1",
+      "target_element_id": "EL001",
+      "target_element": "手机号",
+      "test_scope": "UI可测",
+      "steps": ["在手机号框输入12位数字", "点击登录"],
+      "expected": "输入框限制输入或提示格式错误"
+    }
+  ],
+  "visual_issues": ["登录按钮与输入框间距不一致"]
+}
+"""
+
+SCREENSHOT_ANALYSIS_TEMPLATE = """{few_shot}
+
+请分析这张应用界面截图，严格参考上方示例的 JSON 结构与字段名输出。
+
+【重要原则】
+- 仅识别截图中实际可见的元素和文字，不可见的不臆造
+- 优先识别：Tab/标签页、输入框、按钮、链接、二维码、第三方登录图标、协议文字、弹窗等
+
+【分析任务】
+1. 填写 page_name、page_description
+2. 在 analysis_summary 中简述：布局分区、主要交互流程、可见风险点
+3. 列出所有可见 elements（element_id 从 EL001 起编号）
+4. 为关键元素生成 test_cases（id 从 TC001 起编号），覆盖：
+   - 正向：正常操作流程
+   - 边界：对每个输入框有长度的字段，必须对称覆盖「空值」「刚好满足」「刚好不满足(=满足-1)」「明显超限(=满足+1)」四个方向。如手机号 11 位 → 0位/10位/11位/12位，每个方向成独立用例。对下拉框/复选框等也要覆盖所有选项组合。
+   - 异常：仅写截图可推断的异常（如错误提示态）；断网/权限等标 test_scope=需环境模拟
+   - 视觉：对齐、间距、文字溢出、遮挡
+   - 交互：点击响应、焦点切换、置灰态按钮等
+5. 列出 visual_issues（仅基于截图可见问题）
+
+【优先级】
+- P0：核心流程（如主按钮登录）
+- P1：边界与 UI 可测异常
+- P2：视觉与次要交互
+
+【关联要求】
+- test_cases.target_element_id 尽量填写对应 elements.element_id
+- 每个按钮至少 1 个正向用例；每个输入框至少 3 个边界用例（空值 + 刚好不满足 + 明显超限）"""
+
+
+def build_screenshot_prompt() -> str:
+    """构建 UI 截图分析的完整 Prompt"""
+    return SCREENSHOT_ANALYSIS_TEMPLATE.format(few_shot=FEW_SHOT_SCREENSHOT)
