@@ -1,0 +1,19 @@
+2026-07-25 16:44:06 | DEBUG    | ai_test_agent | 这是 DEBUG 级别——详细的调试信息
+2026-07-25 16:44:06 | INFO     | ai_test_agent | 这是 INFO 级别——API 调用开始
+2026-07-25 16:44:06 | WARNING  | ai_test_agent | 这是 WARNING 级别——重试第 2 次
+2026-07-25 16:44:06 | ERROR    | ai_test_agent | 这是 ERROR 级别——JSON 解析失败
+2026-07-25 16:44:06 | CRITICAL | ai_test_agent | 这是 CRITICAL 级别——API Key 无效
+2026-07-25 16:44:07 | ERROR    | ai_test_agent | JSON 解析失败: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+Traceback (most recent call last):
+  File "d:\AI\Projects\Cursor\ai_test_agent\src\agent\logger_config.py", line 102, in test_logger
+    json.loads("{invalid json}")
+  File "F:\Programs\Python\Python312\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Programs\Python\Python312\Lib\json\decoder.py", line 338, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Programs\Python\Python312\Lib\json\decoder.py", line 354, in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ^^^^^^^^^^^^^^^^^^^^^^
+json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)

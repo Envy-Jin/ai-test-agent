@@ -83,7 +83,7 @@ class CaseGenerator:
                 response_schema=TestCaseCollection,
             ),
         )
-        return TestCaseCollection.model_validate_json(response.text)
+        return TestCaseCollection.model_validate_json(response.text or "")
 
     def refine(self, collection: TestCaseCollection, instruction: str) -> str:
         """
@@ -109,7 +109,7 @@ class CaseGenerator:
             f"已有用例：{collection.model_dump_json(indent=2)}"
         )
         resp = chat.send_message(instruction)
-        return resp.text
+        return resp.text or ""
 
     def to_markdown(self, collection: TestCaseCollection) -> str:
         """把用例集合转为 Markdown 表格"""

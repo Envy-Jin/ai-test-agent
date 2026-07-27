@@ -1,0 +1,43 @@
+2026-07-26 17:48:15 | INFO     | ai_test_agent | SafeGeminiClient 初始化完成: model=gemini-3.5-flash
+2026-07-26 17:48:15 | INFO     | ai_test_agent | generate() 调用开始: prompt=用一句话解释什么是边界值测试...
+2026-07-26 17:48:22 | INFO     | ai_test_agent | generate() 成功: 长度=84
+2026-07-26 17:48:22 | INFO     | ai_test_agent | generate_stream() 调用开始: prompt=列出 3 个软件测试的基本原则...
+2026-07-26 17:48:34 | INFO     | ai_test_agent | generate_stream() 成功: 长度=611
+2026-07-26 17:48:34 | INFO     | ai_test_agent | generate_json() 调用开始: prompt=请为「购物车功能」生成 3 个测试用例，输出 JSON 格式，包含 test_cases 数组...
+2026-07-26 17:48:34 | INFO     | ai_test_agent | generate() 调用开始: prompt=请为「购物车功能」生成 3 个测试用例，输出 JSON 格式，包含 test_cases 数组...
+2026-07-26 17:48:42 | INFO     | ai_test_agent | generate() 成功: 长度=1281
+2026-07-26 17:48:42 | INFO     | ai_test_agent | generate_json() 成功: keys=['test_cases']
+2026-07-26 17:48:42 | INFO     | ai_test_agent | generate_schema() 调用开始: schema=TestCaseCollection
+2026-07-26 17:48:49 | INFO     | ai_test_agent | generate_schema() 成功: TestCaseCollection
+2026-07-26 17:48:49 | INFO     | ai_test_agent | create_chat() 创建对话: system=你是测试工程师。回答简洁。...
+2026-07-26 17:48:49 | INFO     | ai_test_agent | SafeChat 创建完成: model=gemini-3.5-flash
+2026-07-26 17:48:49 | INFO     | ai_test_agent | SafeChat.send(): message=我在测试一个注册功能...
+2026-07-26 17:48:55 | INFO     | ai_test_agent | SafeChat.send() 成功: 长度=234
+2026-07-26 17:48:55 | INFO     | ai_test_agent | SafeChat.send(): message=补充边界条件测试用例...
+2026-07-26 17:49:05 | INFO     | ai_test_agent | SafeChat.send() 成功: 长度=821
+2026-07-27 11:34:02 | INFO     | ai_test_agent | SafeGeminiClient 初始化完成: model=gemini-3.1-flash-lite
+2026-07-27 11:34:02 | INFO     | ai_test_agent | RobustCaseGenerator 初始化完成
+2026-07-27 11:34:02 | INFO     | ai_test_agent | generate_schema() 调用开始: schema=TestCaseCollection
+2026-07-27 11:34:05 | INFO     | ai_test_agent | generate_schema() 成功: TestCaseCollection
+2026-07-27 11:34:05 | INFO     | ai_test_agent | 生成完成: requirement=用户登录功能，支持手机号和邮箱登录，密码不少于8位...
+2026-07-27 11:34:05 | INFO     | ai_test_agent | generate_json() 调用开始: prompt=请为以下需求生成测试用例，覆盖正向、边界、异常场景。
+
+需求：购物车功能：添加商品、修改数量、删除商品
+
+要求：
+- 正向用例标 P0，边界和异常标 P1
+- ...
+2026-07-27 11:34:05 | INFO     | ai_test_agent | generate() 调用开始: prompt=请为以下需求生成测试用例，覆盖正向、边界、异常场景。
+
+需求：购物车功能：添加商品、修改数量、删除商品
+
+要求：
+- 正向用例标 P0，边界和异常标 P1
+- ...
+2026-07-27 11:34:10 | INFO     | ai_test_agent | generate() 成功: 长度=1642
+2026-07-27 11:34:10 | WARNING  | ai_test_agent | generate_json() JSON 提取失败，返回 fallback
+2026-07-27 11:34:10 | INFO     | ai_test_agent | 生成完成: requirement=购物车功能：添加商品、修改数量、删除商品...
+2026-07-27 11:34:10 | INFO     | ai_test_agent | generate_schema() 调用开始: schema=TestCaseCollection
+2026-07-27 11:34:13 | INFO     | ai_test_agent | generate_schema() 成功: TestCaseCollection
+2026-07-27 11:34:13 | INFO     | ai_test_agent | 生成完成: requirement=搜索功能，支持关键词搜索，结果分页每页20条...
+2026-07-27 11:34:13 | INFO     | ai_test_agent | 报告已保存: docs/robust_report.md
