@@ -41,3 +41,25 @@
 2026-07-27 11:34:13 | INFO     | ai_test_agent | generate_schema() 成功: TestCaseCollection
 2026-07-27 11:34:13 | INFO     | ai_test_agent | 生成完成: requirement=搜索功能，支持关键词搜索，结果分页每页20条...
 2026-07-27 11:34:13 | INFO     | ai_test_agent | 报告已保存: docs/robust_report.md
+2026-07-27 22:01:54 | INFO     | ai_test_agent | SafeGeminiClient 初始化完成: model=gemini-3.1-flash-lite
+2026-07-27 22:01:54 | INFO     | ai_test_agent | FeatureExtractor 初始化完成
+2026-07-27 22:01:54 | INFO     | ai_test_agent | FeatureExtractor.extract() 开始: 文本长度=104
+2026-07-27 22:01:54 | INFO     | ai_test_agent | generate() 调用开始: prompt=请分析以下需求文档，提取所有功能点。
+
+需求文档：
+
+用户注册功能：新用户通过手机号验证码注册。
+输入：手机号（11位）、验证码（6位数字）、密码（8位+字母数...
+2026-07-27 22:02:11 | INFO     | ai_test_agent | generate() 成功: 长度=642
+2026-07-27 22:02:11 | INFO     | ai_test_agent | 功能提取完成: 1 个功能点, 复杂度: low
+2026-07-28 11:03:16 | INFO     | ai_test_agent | SafeGeminiClient 初始化完成: model=gemini-3.1-flash-lite
+2026-07-28 11:03:16 | INFO     | ai_test_agent | TestCaseGenerator 初始化完成
+2026-07-28 11:03:16 | INFO     | ai_test_agent | 为功能点生成用例: 用户登录
+2026-07-28 11:03:16 | INFO     | ai_test_agent | generate_schema() 调用开始: schema=TestCaseCollection
+2026-07-28 11:03:20 | INFO     | ai_test_agent | generate_schema() 成功: TestCaseCollection
+2026-07-28 11:03:20 | INFO     | ai_test_agent | ✓ 用户登录: 8 个用例 (Schema)
+2026-07-28 11:03:20 | INFO     | ai_test_agent | 为功能点生成用例: 用户登录
+2026-07-28 11:03:20 | INFO     | ai_test_agent | generate_schema() 调用开始: schema=TestCaseCollection
+2026-07-28 11:03:23 | INFO     | ai_test_agent | generate_schema() 成功: TestCaseCollection
+2026-07-28 11:03:23 | INFO     | ai_test_agent | ✓ 用户登录: 8 个用例 (Schema)
+2026-07-28 11:03:23 | INFO     | ai_test_agent | 全部生成完成: 1 功能点, 8 个用例, 成功 1, 失败 0, 耗时 3.0s

@@ -54,7 +54,7 @@ def parse_requirement_with_ai(requirement_text: str) -> dict:
             response_mime_type="application/json",
         ),
     )
-    return json.loads(response.text)
+    return json.loads(response.text or "")
 
 
 def compare_parsers():

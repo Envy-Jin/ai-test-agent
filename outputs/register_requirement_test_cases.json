@@ -1,0 +1,314 @@
+{
+  "meta": {
+    "source_file": "docs/requirements/register_requirement.txt",
+    "generated_at": "2026-07-29 10:44:38",
+    "pipeline_version": "1.0.0",
+    "elapsed_seconds": 15.1
+  },
+  "summary": {
+    "features_count": 2,
+    "total_cases": 17,
+    "success_count": 2,
+    "failed_count": 0,
+    "case_type_distribution": {
+      "正向": 2,
+      "边界": 5,
+      "异常": 10,
+      "安全": 0,
+      "性能": 0
+    },
+    "priority_distribution": {
+      "P0": 2,
+      "P1": 15,
+      "P2": 0
+    }
+  },
+  "suites": [
+    {
+      "feature": {
+        "name": "验证码发送",
+        "description": "向用户手机发送注册验证码",
+        "sub_features": [
+          "发送验证码"
+        ],
+        "constraints": [
+          "同一手机号每天最多发送5条验证码",
+          "验证码有效期5分钟"
+        ],
+        "inputs": [
+          "手机号-11位数字，以1开头，必填"
+        ]
+      },
+      "test_cases": [
+        {
+          "id": "TC001",
+          "title": "正常发送验证码并完成后续流程",
+          "type": "正向",
+          "priority": "P0",
+          "preconditions": [
+            "用户处于注册页面",
+            "手机号未达到当日发送上限"
+          ],
+          "steps": [
+            "输入合法的11位手机号",
+            "点击发送验证码按钮",
+            "输入正确的验证码",
+            "点击注册按钮"
+          ],
+          "expected": "验证码发送成功，注册流程完成，系统自动登录并跳转至首页"
+        },
+        {
+          "id": "TC002",
+          "title": "验证码发送次数边界测试-第5次",
+          "type": "边界",
+          "priority": "P1",
+          "preconditions": [
+            "手机号已发送4次验证码"
+          ],
+          "steps": [
+            "输入该手机号",
+            "点击发送验证码按钮"
+          ],
+          "expected": "验证码发送成功，系统提示今日剩余次数为0"
+        },
+        {
+          "id": "TC003",
+          "title": "验证码发送次数边界测试-第6次",
+          "type": "边界",
+          "priority": "P1",
+          "preconditions": [
+            "手机号已发送5次验证码"
+          ],
+          "steps": [
+            "输入该手机号",
+            "点击发送验证码按钮"
+          ],
+          "expected": "提示发送失败，今日发送次数已达上限"
+        },
+        {
+          "id": "TC004",
+          "title": "手机号格式错误-长度不足",
+          "type": "异常",
+          "priority": "P1",
+          "preconditions": [
+            "无"
+          ],
+          "steps": [
+            "输入10位数字手机号",
+            "点击发送验证码按钮"
+          ],
+          "expected": "提示手机号格式不正确"
+        },
+        {
+          "id": "TC005",
+          "title": "手机号格式错误-非1开头",
+          "type": "异常",
+          "priority": "P1",
+          "preconditions": [
+            "无"
+          ],
+          "steps": [
+            "输入以2开头的11位数字手机号",
+            "点击发送验证码按钮"
+          ],
+          "expected": "提示手机号格式不正确"
+        },
+        {
+          "id": "TC006",
+          "title": "手机号字段缺失",
+          "type": "异常",
+          "priority": "P1",
+          "preconditions": [
+            "无"
+          ],
+          "steps": [
+            "保持手机号输入框为空",
+            "点击发送验证码按钮"
+          ],
+          "expected": "提示手机号不能为空"
+        },
+        {
+          "id": "TC007",
+          "title": "安全测试-SQL注入尝试",
+          "type": "异常",
+          "priority": "P1",
+          "preconditions": [
+            "无"
+          ],
+          "steps": [
+            "输入' OR 1=1 --",
+            "点击发送验证码按钮"
+          ],
+          "expected": "系统拦截非法字符，提示手机号格式错误，后端无异常报错"
+        }
+      ],
+      "case_count": 7,
+      "generation_mode": "schema"
+    },
+    {
+      "feature": {
+        "name": "用户注册",
+        "description": "新用户通过验证码及个人信息完成账号创建",
+        "sub_features": [
+          "账号注册",
+          "自动登录"
+        ],
+        "constraints": [
+          "同一IP每小时最多注册3个账号",
+          "密码不能为常见弱密码（如123456、password）"
+        ],
+        "inputs": [
+          "手机号-11位数字，以1开头，必填，唯一性校验",
+          "验证码-6位数字，必填，有效期5分钟",
+          "密码-不少于8位，含数字和字母，必填",
+          "用户名-3-20字符，仅限字母、数字、下划线，必填"
+        ]
+      },
+      "test_cases": [
+        {
+          "id": "TC001",
+          "title": "正常注册并自动登录",
+          "type": "正向",
+          "priority": "P0",
+          "preconditions": [
+            "手机号未注册",
+            "验证码有效"
+          ],
+          "steps": [
+            "输入合法的手机号、验证码、密码、用户名",
+            "点击注册按钮"
+          ],
+          "expected": "注册成功，系统自动登录并跳转至首页"
+        },
+        {
+          "id": "TC002",
+          "title": "用户名长度边界测试",
+          "type": "边界",
+          "priority": "P1",
+          "preconditions": [
+            "无"
+          ],
+          "steps": [
+            "输入3位用户名",
+            "输入20位用户名"
+          ],
+          "expected": "均能注册成功"
+        },
+        {
+          "id": "TC003",
+          "title": "用户名长度越界测试",
+          "type": "边界",
+          "priority": "P1",
+          "preconditions": [
+            "无"
+          ],
+          "steps": [
+            "输入2位用户名",
+            "输入21位用户名"
+          ],
+          "expected": "系统提示用户名长度不符合要求"
+        },
+        {
+          "id": "TC004",
+          "title": "密码强度边界测试",
+          "type": "边界",
+          "priority": "P1",
+          "preconditions": [
+            "无"
+          ],
+          "steps": [
+            "输入8位字母数字组合密码",
+            "输入7位字母数字组合密码"
+          ],
+          "expected": "8位注册成功，7位提示密码长度不足"
+        },
+        {
+          "id": "TC005",
+          "title": "手机号格式异常测试",
+          "type": "异常",
+          "priority": "P1",
+          "preconditions": [
+            "无"
+          ],
+          "steps": [
+            "输入10位数字",
+            "输入以2开头的11位数字",
+            "输入包含字母的11位字符"
+          ],
+          "expected": "系统提示手机号格式错误"
+        },
+        {
+          "id": "TC006",
+          "title": "必填字段缺失测试",
+          "type": "异常",
+          "priority": "P1",
+          "preconditions": [
+            "无"
+          ],
+          "steps": [
+            "手机号留空",
+            "验证码留空",
+            "密码留空",
+            "用户名留空"
+          ],
+          "expected": "系统提示对应字段为必填项"
+        },
+        {
+          "id": "TC007",
+          "title": "弱密码校验测试",
+          "type": "异常",
+          "priority": "P1",
+          "preconditions": [
+            "无"
+          ],
+          "steps": [
+            "输入12345678",
+            "输入password123"
+          ],
+          "expected": "系统提示密码过于简单，请重新设置"
+        },
+        {
+          "id": "TC008",
+          "title": "IP注册频率限制测试",
+          "type": "异常",
+          "priority": "P1",
+          "preconditions": [
+            "同一IP已注册3个账号"
+          ],
+          "steps": [
+            "尝试注册第4个账号"
+          ],
+          "expected": "系统提示注册过于频繁，请稍后再试"
+        },
+        {
+          "id": "TC009",
+          "title": "SQL注入安全测试",
+          "type": "异常",
+          "priority": "P1",
+          "preconditions": [
+            "无"
+          ],
+          "steps": [
+            "在用户名输入框输入 ' OR 1=1 --"
+          ],
+          "expected": "系统拦截非法字符，注册失败"
+        },
+        {
+          "id": "TC010",
+          "title": "验证码过期测试",
+          "type": "异常",
+          "priority": "P1",
+          "preconditions": [
+            "验证码已生成超过5分钟"
+          ],
+          "steps": [
+            "输入过期的验证码进行注册"
+          ],
+          "expected": "系统提示验证码已过期"
+        }
+      ],
+      "case_count": 10,
+      "generation_mode": "schema"
+    }
+  ]
+}

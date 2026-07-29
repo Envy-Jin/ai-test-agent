@@ -92,7 +92,7 @@ def _try_regex_parse(text: str) -> dict | list | None:
 
     return None
 
-def extract_json_with_fallback(text: str, fallback: dict | list | None = None) -> dict | list | None:
+def extract_json_with_fallback(text: str, fallback: dict[str, Any] = {}) -> dict[str, Any]:
     """
     从文本中提取 JSON，失败时返回指定的兜底值。
 
@@ -115,9 +115,9 @@ def extract_json_with_fallback(text: str, fallback: dict | list | None = None) -
         {"error": "parse_failed"}
     """
     result = extract_json(text)
-    if result is not None:
+    if isinstance(result, dict):
         return result
-    return fallback if fallback is not None else {}
+    return fallback 
 
 def validate_json_schema(data: dict, required_keys: list[str]) -> bool:
     """

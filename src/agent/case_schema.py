@@ -22,6 +22,7 @@ class TestCase(BaseModel):
     title: str = Field(min_length=1, description="用例标题，简明扼要")
     type: Literal["正向", "边界", "异常"] = Field(description="用例类型")
     priority: Literal["P0", "P1", "P2"] = Field(description="优先级，P0最高")
+    preconditions: list[str] = Field(default_factory=list, description="前置条件列表")
     steps: list[str] = Field(min_length=1, description="测试步骤列表，至少1步")
     expected: str = Field(min_length=1, description="预期结果")
 

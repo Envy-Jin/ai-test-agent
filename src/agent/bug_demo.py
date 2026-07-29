@@ -10,4 +10,4 @@ manager.add_case(TestCase(
 ))
 
 # Bug：访问不存在的属性
-print(manager.cases[0].nonexistent_field)
+# print(manager.cases[0].nonexistent_field)

@@ -1,0 +1,208 @@
+{
+  "meta": {
+    "source_file": "docs/requirements/login_requirement.md",
+    "generated_at": "2026-07-29 10:20:37",
+    "pipeline_version": "1.0.0",
+    "elapsed_seconds": 10.6
+  },
+  "summary": {
+    "features_count": 1,
+    "total_cases": 10,
+    "success_count": 1,
+    "failed_count": 0,
+    "case_type_distribution": {
+      "正向": 2,
+      "边界": 2,
+      "异常": 6,
+      "安全": 0,
+      "性能": 0
+    },
+    "priority_distribution": {
+      "P0": 2,
+      "P1": 8,
+      "P2": 0
+    }
+  },
+  "suites": [
+    {
+      "feature": {
+        "name": "用户登录",
+        "description": "用户通过身份验证获取访问令牌以进入系统",
+        "sub_features": [
+          "手机号登录",
+          "邮箱登录",
+          "记住我功能",
+          "账号锁定机制",
+          "图形验证码校验"
+        ],
+        "constraints": [
+          "密码错误超过5次锁定账号30分钟",
+          "同一账号最多3个设备同时在线",
+          "连续3次登录失败需输入图形验证码",
+          "默认JWT Token有效期2小时",
+          "勾选记住我后Token有效期延长至7天",
+          "登录接口响应时间不超过500ms",
+          "支持1000并发登录请求",
+          "密码传输必须使用HTTPS加密"
+        ],
+        "inputs": [
+          "手机号（11位数字，以1开头，必填，与邮箱二选一）",
+          "邮箱（标准格式xxx@xxx.xxx，必填，与手机号二选一）",
+          "密码（不少于8位，必须包含数字和字母，必填）",
+          "记住我（布尔值，可选）",
+          "图形验证码（连续3次失败后必填）"
+        ]
+      },
+      "test_cases": [
+        {
+          "id": "TC001",
+          "title": "手机号正常登录",
+          "type": "正向",
+          "priority": "P0",
+          "preconditions": [
+            "用户已注册",
+            "账号未锁定"
+          ],
+          "steps": [
+            "输入正确手机号",
+            "输入正确密码",
+            "点击登录"
+          ],
+          "expected": "登录成功，返回JWT Token，有效期2小时"
+        },
+        {
+          "id": "TC002",
+          "title": "勾选记住我登录",
+          "type": "正向",
+          "priority": "P0",
+          "preconditions": [
+            "用户已注册"
+          ],
+          "steps": [
+            "输入正确邮箱",
+            "输入正确密码",
+            "勾选记住我",
+            "点击登录"
+          ],
+          "expected": "登录成功，返回JWT Token，有效期延长至7天"
+        },
+        {
+          "id": "TC003",
+          "title": "密码长度边界值测试",
+          "type": "边界",
+          "priority": "P1",
+          "preconditions": [
+            "用户已注册"
+          ],
+          "steps": [
+            "输入正确账号",
+            "输入7位数字字母组合密码",
+            "点击登录"
+          ],
+          "expected": "提示密码格式错误，登录失败"
+        },
+        {
+          "id": "TC004",
+          "title": "密码长度刚好8位测试",
+          "type": "边界",
+          "priority": "P1",
+          "preconditions": [
+            "用户已注册"
+          ],
+          "steps": [
+            "输入正确账号",
+            "输入8位数字字母组合密码",
+            "点击登录"
+          ],
+          "expected": "登录成功"
+        },
+        {
+          "id": "TC005",
+          "title": "连续登录失败触发验证码",
+          "type": "异常",
+          "priority": "P1",
+          "preconditions": [
+            "用户已注册"
+          ],
+          "steps": [
+            "输入正确账号",
+            "输入错误密码三次"
+          ],
+          "expected": "第三次失败后，系统提示输入图形验证码"
+        },
+        {
+          "id": "TC006",
+          "title": "账号锁定机制测试",
+          "type": "异常",
+          "priority": "P1",
+          "preconditions": [
+            "用户已注册"
+          ],
+          "steps": [
+            "输入正确账号",
+            "连续输入错误密码5次"
+          ],
+          "expected": "系统提示账号已锁定，30分钟内禁止登录"
+        },
+        {
+          "id": "TC007",
+          "title": "必填字段缺失测试",
+          "type": "异常",
+          "priority": "P1",
+          "preconditions": [
+            "无"
+          ],
+          "steps": [
+            "不输入手机号或邮箱",
+            "输入密码",
+            "点击登录"
+          ],
+          "expected": "提示账号不能为空"
+        },
+        {
+          "id": "TC008",
+          "title": "SQL注入攻击测试",
+          "type": "异常",
+          "priority": "P1",
+          "preconditions": [
+            "无"
+          ],
+          "steps": [
+            "在手机号字段输入 ' OR 1=1 --",
+            "输入任意密码",
+            "点击登录"
+          ],
+          "expected": "登录失败，系统未执行恶意SQL，返回格式错误提示"
+        },
+        {
+          "id": "TC009",
+          "title": "HTTPS传输加密验证",
+          "type": "异常",
+          "priority": "P1",
+          "preconditions": [
+            "无"
+          ],
+          "steps": [
+            "使用抓包工具拦截登录请求"
+          ],
+          "expected": "请求体中密码字段已加密，非明文传输"
+        },
+        {
+          "id": "TC010",
+          "title": "多设备在线限制测试",
+          "type": "异常",
+          "priority": "P1",
+          "preconditions": [
+            "账号已在3个设备登录"
+          ],
+          "steps": [
+            "在第4个设备尝试登录"
+          ],
+          "expected": "提示已达到最大在线设备数，拒绝登录或强制下线旧设备"
+        }
+      ],
+      "case_count": 10,
+      "generation_mode": "schema"
+    }
+  ]
+}
