@@ -88,7 +88,7 @@ class GeminiClient:
             contents=prompt,
             config=self._make_config(),
         )
-        return response.text
+        return response.text if response.text is not None else ""
 
     def ask_json(self, prompt: str) -> dict | list:
         """
@@ -108,7 +108,7 @@ class GeminiClient:
             contents=prompt,
             config=self._make_config(json_mode=True),
         )
-        return json.loads(response.text)
+        return json.loads(response.text) if response.text is not None else {}
 
     def ask_with_retry(
         self,
@@ -176,8 +176,8 @@ class GeminiClient:
             config=config,
         )
         if json_mode:
-            return json.loads(response.text)
-        return response.text
+            return json.loads(response.text) if response.text is not None else {}
+        return response.text if response.text is not None else ""
 
 # ============================================================
 # 便捷函数（模块级，快速使用无需创建实例）

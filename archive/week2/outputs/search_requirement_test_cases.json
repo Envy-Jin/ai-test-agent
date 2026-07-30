@@ -1,0 +1,284 @@
+{
+  "meta": {
+    "source_file": "docs/requirements/search_requirement.md",
+    "generated_at": "2026-07-30 11:03:01",
+    "pipeline_version": "1.0.0",
+    "elapsed_seconds": 13.2
+  },
+  "summary": {
+    "features_count": 2,
+    "total_cases": 15,
+    "success_count": 2,
+    "failed_count": 0,
+    "case_type_distribution": {
+      "正向": 2,
+      "边界": 5,
+      "异常": 8,
+      "安全": 0,
+      "性能": 0
+    },
+    "priority_distribution": {
+      "P0": 2,
+      "P1": 13,
+      "P2": 0
+    }
+  },
+  "suites": [
+    {
+      "feature": {
+        "name": "商品搜索",
+        "description": "用户通过关键词及筛选条件在电商平台检索商品",
+        "sub_features": [
+          "关键词搜索",
+          "多维度筛选",
+          "搜索结果排序",
+          "分页展示"
+        ],
+        "constraints": [
+          "价格区间最小值不能大于最大值",
+          "搜索结果最多返回1000条",
+          "敏感词搜索返回空结果",
+          "搜索响应时间不超过300ms"
+        ],
+        "inputs": [
+          "搜索关键词-1-50字符，支持中英文/数字，必填（空值视为搜索全部）",
+          "价格区间-最小价格与最大价格，可选",
+          "排序方式-综合/价格升序/价格降序/销量/评价，可选",
+          "页码-正整数，默认1，可选",
+          "每页数量-10/20/50，默认20，可选"
+        ]
+      },
+      "test_cases": [
+        {
+          "id": "TC001",
+          "title": "关键词正常搜索并跳转结果页",
+          "type": "正向",
+          "priority": "P0",
+          "preconditions": [
+            "用户处于首页"
+          ],
+          "steps": [
+            "在搜索框输入'手机'",
+            "点击搜索按钮"
+          ],
+          "expected": "跳转至搜索结果页，展示相关商品列表，响应时间小于300ms"
+        },
+        {
+          "id": "TC002",
+          "title": "关键词长度边界测试-最小值",
+          "type": "边界",
+          "priority": "P1",
+          "preconditions": [
+            "用户处于首页"
+          ],
+          "steps": [
+            "输入1个字符'A'",
+            "点击搜索"
+          ],
+          "expected": "搜索成功，返回包含该字符的商品列表"
+        },
+        {
+          "id": "TC003",
+          "title": "关键词长度边界测试-最大值",
+          "type": "边界",
+          "priority": "P1",
+          "preconditions": [
+            "用户处于首页"
+          ],
+          "steps": [
+            "输入50个字符",
+            "点击搜索"
+          ],
+          "expected": "搜索成功，返回结果"
+        },
+        {
+          "id": "TC004",
+          "title": "价格区间逻辑异常",
+          "type": "异常",
+          "priority": "P1",
+          "preconditions": [
+            "用户处于搜索结果页"
+          ],
+          "steps": [
+            "设置最小价格为1000",
+            "设置最大价格为500",
+            "点击筛选"
+          ],
+          "expected": "提示价格区间设置错误，最小值不能大于最大值"
+        },
+        {
+          "id": "TC005",
+          "title": "搜索敏感词",
+          "type": "异常",
+          "priority": "P1",
+          "preconditions": [
+            "系统已配置敏感词库"
+          ],
+          "steps": [
+            "输入敏感词",
+            "点击搜索"
+          ],
+          "expected": "返回空结果提示"
+        },
+        {
+          "id": "TC006",
+          "title": "SQL注入安全测试",
+          "type": "异常",
+          "priority": "P1",
+          "preconditions": [
+            "用户处于首页"
+          ],
+          "steps": [
+            "输入' OR 1=1 --'",
+            "点击搜索"
+          ],
+          "expected": "系统拦截非法字符，不执行数据库查询，返回空结果或错误提示"
+        },
+        {
+          "id": "TC007",
+          "title": "分页参数边界测试",
+          "type": "边界",
+          "priority": "P1",
+          "preconditions": [
+            "搜索结果超过1000条"
+          ],
+          "steps": [
+            "设置每页数量为50",
+            "跳转至第20页"
+          ],
+          "expected": "正确展示第20页数据，且总记录数不超过1000条"
+        },
+        {
+          "id": "TC008",
+          "title": "关键词缺失搜索",
+          "type": "异常",
+          "priority": "P1",
+          "preconditions": [
+            "用户处于首页"
+          ],
+          "steps": [
+            "搜索框留空",
+            "点击搜索"
+          ],
+          "expected": "展示全量商品列表"
+        },
+        {
+          "id": "TC009",
+          "title": "价格区间格式错误",
+          "type": "异常",
+          "priority": "P1",
+          "preconditions": [
+            "用户处于搜索结果页"
+          ],
+          "steps": [
+            "在价格区间输入字母'abc'",
+            "点击筛选"
+          ],
+          "expected": "提示输入格式错误，仅支持数字"
+        }
+      ],
+      "case_count": 9,
+      "generation_mode": "schema"
+    },
+    {
+      "feature": {
+        "name": "搜索历史管理",
+        "description": "记录并展示用户的历史搜索记录",
+        "sub_features": [
+          "历史记录存储",
+          "历史记录展示"
+        ],
+        "constraints": [
+          "最多保存10条搜索历史记录"
+        ],
+        "inputs": [
+          "搜索关键词-触发搜索时自动记录"
+        ]
+      },
+      "test_cases": [
+        {
+          "id": "TC001",
+          "title": "正常搜索并记录历史",
+          "type": "正向",
+          "priority": "P0",
+          "preconditions": [
+            "用户已登录",
+            "搜索历史为空"
+          ],
+          "steps": [
+            "在搜索框输入关键词'测试'",
+            "点击搜索按钮"
+          ],
+          "expected": "搜索成功，页面跳转至搜索结果页，历史记录列表显示'测试'，且记录条数为1"
+        },
+        {
+          "id": "TC002",
+          "title": "历史记录达到边界值10条",
+          "type": "边界",
+          "priority": "P1",
+          "preconditions": [
+            "历史记录已有9条"
+          ],
+          "steps": [
+            "输入第10个关键词并搜索"
+          ],
+          "expected": "搜索成功，历史记录列表显示10条记录，包含最新搜索的关键词"
+        },
+        {
+          "id": "TC003",
+          "title": "超过边界值触发自动覆盖",
+          "type": "边界",
+          "priority": "P1",
+          "preconditions": [
+            "历史记录已有10条"
+          ],
+          "steps": [
+            "输入第11个关键词并搜索"
+          ],
+          "expected": "搜索成功，历史记录列表保持10条，最早的一条记录被移除，新增的关键词排在列表首位"
+        },
+        {
+          "id": "TC004",
+          "title": "搜索空值异常测试",
+          "type": "异常",
+          "priority": "P1",
+          "preconditions": [
+            "无"
+          ],
+          "steps": [
+            "搜索框不输入任何内容直接点击搜索"
+          ],
+          "expected": "系统提示搜索内容不能为空，历史记录不新增"
+        },
+        {
+          "id": "TC005",
+          "title": "搜索特殊字符注入测试",
+          "type": "异常",
+          "priority": "P1",
+          "preconditions": [
+            "无"
+          ],
+          "steps": [
+            "在搜索框输入'<script>alert(1)</script>'并搜索"
+          ],
+          "expected": "系统应过滤或转义特殊字符，搜索结果页正常显示，历史记录中不应执行脚本"
+        },
+        {
+          "id": "TC006",
+          "title": "搜索超长字符串测试",
+          "type": "异常",
+          "priority": "P1",
+          "preconditions": [
+            "无"
+          ],
+          "steps": [
+            "输入超过系统允许长度的字符串（如500字符）并搜索"
+          ],
+          "expected": "系统应截断或提示输入过长，不会导致页面崩溃或数据库写入错误"
+        }
+      ],
+      "case_count": 6,
+      "generation_mode": "schema"
+    }
+  ]
+}
