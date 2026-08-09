@@ -103,14 +103,16 @@ class RAGRetriever:
             入库的文档片段数
         """
         if self._vectorstore is not None and not force:
-            print("索引已存在，跳过。使用 force=True 强制重建。")
+            print("索引已存在，跳过。如需重建，请使用 force=True。")
             count: int = self._vectorstore._collection.count()  # type: ignore[attr-defined]
             return count
 
-        # 1. 加载文档
+        # 1. 加载文档（同时支持 .txt 和 .md）
         print(f"加载文档: {self.docs_dir}")
         docs: list[Document] = []
-        for filepath in Path(self.docs_dir).glob("*.txt"):
+        for filepath in Path(self.docs_dir).iterdir():
+            if not filepath.suffix in (".txt", ".md"):
+                continue
             with open(filepath, "r", encoding="utf-8") as f:
                 docs.append(Document(page_content=f.read(), metadata={"source": str(filepath)}))
         print(f"  加载了 {len(docs)} 个文档")
@@ -170,7 +172,7 @@ class RAGRetriever:
         return results
 
         
-    def as_retriever(self, k: int = 3) -> VectorStoreRetriever:
+    def as_retriever(self, search_type: str = "similarity", k: int = 3) -> VectorStoreRetriever:
         """
         转为 LangChain 标准检索器（用于 Day 19 的 RAG Chain）。
 
@@ -183,7 +185,7 @@ class RAGRetriever:
         if self._vectorstore is None:
             raise RuntimeError("尚未建索引，请先调用 index()")
 
-        return self._vectorstore.as_retriever(search_kwargs={"k": k})
+        return self._vectorstore.as_retriever(search_type=search_type, search_kwargs={"k": k})
 
 
     def stats(self) -> dict[str, object]:
