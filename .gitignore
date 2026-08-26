@@ -56,3 +56,6 @@ HANDOFF.md
 
 #stackdump
 *.stackdump
+
+# memory files
+*.sqlite
