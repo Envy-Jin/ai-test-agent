@@ -1,0 +1,54 @@
+{
+  "title": "登录服务接口文档",
+  "base_url": "http://127.0.0.1:8766",
+  "endpoints": [
+    {
+      "name": "用户登录",
+      "method": "POST",
+      "path": "/api/login",
+      "summary": "手机号 + 密码登录，成功返回访问令牌",
+      "params": [
+        {
+          "name": "phone",
+          "location": "body",
+          "required": true,
+          "param_type": "string",
+          "example": "13800138000",
+          "description": "11 位手机号，1[3-9] 开头"
+        },
+        {
+          "name": "password",
+          "location": "body",
+          "required": true,
+          "param_type": "string",
+          "example": "Test123456",
+          "description": "不少于 8 位，须含数字和字母"
+        }
+      ],
+      "auth_required": false,
+      "expected_status": 200,
+      "error_status": 400,
+      "unauthorized_status": 401,
+      "response_fields": [
+        "code",
+        "message",
+        "data.token"
+      ]
+    },
+    {
+      "name": "查询订单列表",
+      "method": "GET",
+      "path": "/api/orders",
+      "summary": "查询当前登录用户的订单列表",
+      "params": [],
+      "auth_required": true,
+      "expected_status": 200,
+      "error_status": 400,
+      "unauthorized_status": 401,
+      "response_fields": [
+        "code",
+        "data.orders"
+      ]
+    }
+  ]
+}
