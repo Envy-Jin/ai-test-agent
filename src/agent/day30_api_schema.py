@@ -142,8 +142,6 @@ def _parse_api_doc_json(text: str, source: str) -> ApiDoc | None:
 
 API_DOC_PARSE_PROMPT = """你是一名接口测试工程师，擅长从接口文档中提取结构化接口信息。
 
-接口文档：
-{api_doc}
 
 请按以下要求解析（输出符合给定 Schema）：
 
