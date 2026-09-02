@@ -1,0 +1,182 @@
+[
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "email": "user000@example.com",
+    "age": 1,
+    "username": "user_000",
+    "gender": "男",
+    "created_at": "2026-09-01 10:00:00"
+  },
+  {
+    "id": 101,
+    "phone": "13000000000",
+    "email": "user000@example.com",
+    "age": 1,
+    "username": "user_000",
+    "gender": "男",
+    "created_at": "2026-09-01 10:00:00"
+  },
+  {
+    "id": 0,
+    "phone": "13000000000",
+    "email": "user000@example.com",
+    "age": 1,
+    "username": "user_000",
+    "gender": "男",
+    "created_at": "2026-09-01 10:00:00"
+  },
+  {
+    "id": 102,
+    "phone": "13000000000",
+    "email": "user000@example.com",
+    "age": 1,
+    "username": "user_000",
+    "gender": "男",
+    "created_at": "2026-09-01 10:00:00"
+  },
+  {
+    "id": 1,
+    "phone": "",
+    "email": "user000@example.com",
+    "age": 1,
+    "username": "user_000",
+    "gender": "男",
+    "created_at": "2026-09-01 10:00:00"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "email": "user000@example.com",
+    "age": 1,
+    "username": "user_000",
+    "gender": "男",
+    "created_at": "2026-09-01 10:00:00"
+  },
+  {
+    "id": 1,
+    "phone": "130000000000",
+    "email": "user000@example.com",
+    "age": 1,
+    "username": "user_000",
+    "gender": "男",
+    "created_at": "2026-09-01 10:00:00"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "email": "",
+    "age": 1,
+    "username": "user_000",
+    "gender": "男",
+    "created_at": "2026-09-01 10:00:00"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "email": "user000@example.com",
+    "age": 1,
+    "username": "user_000",
+    "gender": "男",
+    "created_at": "2026-09-01 10:00:00"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "email": "user000@example.coma",
+    "age": 1,
+    "username": "user_000",
+    "gender": "男",
+    "created_at": "2026-09-01 10:00:00"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "email": "user000@example.com",
+    "age": 1,
+    "username": "user_000",
+    "gender": "男",
+    "created_at": "2026-09-01 10:00:00"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "email": "user000@example.com",
+    "age": 150,
+    "username": "user_000",
+    "gender": "男",
+    "created_at": "2026-09-01 10:00:00"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "email": "user000@example.com",
+    "age": 0,
+    "username": "user_000",
+    "gender": "男",
+    "created_at": "2026-09-01 10:00:00"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "email": "user000@example.com",
+    "age": 151,
+    "username": "user_000",
+    "gender": "男",
+    "created_at": "2026-09-01 10:00:00"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "email": "user000@example.com",
+    "age": 1,
+    "username": "",
+    "gender": "男",
+    "created_at": "2026-09-01 10:00:00"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "email": "user000@example.com",
+    "age": 1,
+    "username": "user_000",
+    "gender": "男",
+    "created_at": "2026-09-01 10:00:00"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "email": "user000@example.com",
+    "age": 1,
+    "username": "user_000a",
+    "gender": "男",
+    "created_at": "2026-09-01 10:00:00"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "email": "user000@example.com",
+    "age": 1,
+    "username": "user_000",
+    "gender": "男",
+    "created_at": "2026-09-01 10:00:00"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "email": "user000@example.com",
+    "age": 1,
+    "username": "user_000",
+    "gender": "女",
+    "created_at": "2026-09-01 10:00:00"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "email": "user000@example.com",
+    "age": 1,
+    "username": "user_000",
+    "gender": "未知",
+    "created_at": "2026-09-01 10:00:00"
+  }
+]

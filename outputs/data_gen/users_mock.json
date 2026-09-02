@@ -1,0 +1,55 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "table": "users",
+    "total": 5,
+    "list": [
+      {
+        "id": 1,
+        "phone": "13000000000",
+        "email": "user000@example.com",
+        "age": 1,
+        "username": "user_000",
+        "gender": "男",
+        "created_at": "2026-09-01 10:00:00"
+      },
+      {
+        "id": 2,
+        "phone": "14000000001",
+        "email": "user001@example.com",
+        "age": 2,
+        "username": "user_001",
+        "gender": "女",
+        "created_at": "2026-09-01 10:01:00"
+      },
+      {
+        "id": 3,
+        "phone": "15000000002",
+        "email": "user002@example.com",
+        "age": 3,
+        "username": "user_002",
+        "gender": "未知",
+        "created_at": "2026-09-01 10:02:00"
+      },
+      {
+        "id": 4,
+        "phone": "16000000003",
+        "email": "user003@example.com",
+        "age": 4,
+        "username": "user_003",
+        "gender": "男",
+        "created_at": "2026-09-01 10:03:00"
+      },
+      {
+        "id": 5,
+        "phone": "17000000004",
+        "email": "user004@example.com",
+        "age": 5,
+        "username": "user_004",
+        "gender": "女",
+        "created_at": "2026-09-01 10:04:00"
+      }
+    ]
+  }
+}

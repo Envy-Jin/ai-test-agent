@@ -1,0 +1,13 @@
+{
+    "table_name": "orders",
+    "description": "订单表，用于电商下单场景",
+    "fields": [
+      {"name": "id", "field_type": "int", "required": true, "description": "订单ID，自增主键", "primary_key": true},
+      {"name": "order_no", "field_type": "str", "required": true, "description": "订单号", "max_length": 32},
+      {"name": "user_id", "field_type": "int", "required": true, "description": "下单用户ID", "min_value": 1},
+      {"name": "amount", "field_type": "float", "required": true, "description": "订单金额", "min_value": 0.01, "max_value": 999999.99},
+      {"name": "status", "field_type": "enum", "required": true, "description": "订单状态", "enum_values": ["待支付", "已支付", "已发货", "已完成", "已取消"]},
+      {"name": "remark", "field_type": "str", "required": false, "description": "备注", "max_length": 200}
+    ]
+  }
+  
