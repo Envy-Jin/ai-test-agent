@@ -1,0 +1,59 @@
+[
+    {
+      "case_id": "TC001",
+      "title": "正常登录返回 token",
+      "module": "login",
+      "method": "POST",
+      "path": "/api/login",
+      "test_type": "功能",
+      "priority": "P0",
+      "pytest_ids": ["outputs/generated_tests/test_api_suite.py::TestApiLogin::test_normal"]
+    },
+    {
+      "case_id": "TC002",
+      "title": "登录缺少必填参数",
+      "module": "login",
+      "method": "POST",
+      "path": "/api/login",
+      "test_type": "参数缺失",
+      "priority": "P1",
+      "pytest_ids": [
+        "outputs/generated_tests/test_api_suite.py::TestApiLogin::test_missing_params[payload0]",
+        "outputs/generated_tests/test_api_suite.py::TestApiLogin::test_missing_params[payload1]"
+      ]
+    },
+    {
+      "case_id": "TC003",
+      "title": "错误凭据登录被拒（401）",
+      "module": "login",
+      "method": "POST",
+      "path": "/api/login",
+      "test_type": "错误凭据",
+      "priority": "P0",
+      "pytest_ids": ["outputs/generated_tests/test_api_suite.py::TestApiLogin::test_invalid_credentials"]
+    },
+    {
+      "case_id": "TC004",
+      "title": "携带有效 token 查询订单",
+      "module": "orders",
+      "method": "GET",
+      "path": "/api/orders",
+      "test_type": "功能",
+      "priority": "P0",
+      "pytest_ids": ["outputs/generated_tests/test_api_suite.py::TestApiOrders::test_normal"]
+    },
+    {
+      "case_id": "TC005",
+      "title": "无/错 token 访问订单被拒（越权）",
+      "module": "orders",
+      "method": "GET",
+      "path": "/api/orders",
+      "test_type": "越权访问",
+      "priority": "P0",
+      "pytest_ids": [
+        "outputs/generated_tests/test_api_suite.py::TestApiOrders::test_unauthorized[headers0]",
+        "outputs/generated_tests/test_api_suite.py::TestApiOrders::test_unauthorized[headers1]"
+      ]
+    }
+  ]
+  

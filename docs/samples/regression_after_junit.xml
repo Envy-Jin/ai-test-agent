@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+  <testsuite name="pytest" errors="0" failures="3" skipped="0" tests="7" time="1.234" timestamp="2026-09-03T10:00:00.000000" hostname="DESKTOP">
+    <testcase classname="test_api_suite.TestApiLogin" name="test_normal" time="0.080"/>
+    <testcase classname="test_api_suite.TestApiLogin" name="test_missing_params[payload0]" time="0.072"/>
+    <testcase classname="test_api_suite.TestApiLogin" name="test_missing_params[payload1]" time="0.070"/>
+    <testcase classname="test_api_suite.TestApiLogin" name="test_invalid_credentials" time="0.090">
+      <failure message="AssertionError: 期望 401 实际 500: {&quot;code&quot;: 50000, &quot;message&quot;: &quot;服务器内部错误&quot;}">...</failure>
+    </testcase>
+    <testcase classname="test_api_suite.TestApiOrders" name="test_normal" time="0.095"/>
+    <testcase classname="test_api_suite.TestApiOrders" name="test_unauthorized[headers0]" time="0.088">
+      <failure message="AssertionError: 期望 401 实际 200: {&quot;code&quot;: 0, &quot;data&quot;: {&quot;orders&quot;: []}}">...</failure>
+    </testcase>
+    <testcase classname="test_api_suite.TestApiOrders" name="test_unauthorized[headers1]" time="0.091">
+      <failure message="AssertionError: 期望 401 实际 200: {&quot;code&quot;: 0, &quot;data&quot;: {&quot;orders&quot;: []}}">...</failure>
+    </testcase>
+  </testsuite>
+</testsuites>

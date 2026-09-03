@@ -1,0 +1,66 @@
+diff --git a/src/agent/auth_common.py b/src/agent/auth_common.py
+new file mode 100644
+index 0000000..1a2b3c4
+--- /dev/null
++++ b/src/agent/auth_common.py
+@@ -0,0 +1,26 @@
++"""公共鉴权模块：本次重构把分散在 handler 里的鉴权逻辑统一收口到这里。"""
++
++VALID_USERS: dict[str, str] = {
++    "13800138000": "Test123456",
++}
++
++
++def verify_credentials(phone: str, password: str) -> bool:
++    """校验手机号+密码（原内联在 do_POST 里，本次迁移）。"""
++    return VALID_USERS.get(phone) == password
++
++
++def issue_token(phone: str) -> str:
++    """签发 token：本次变更从固定 token 改为按用户派生（加盐）。"""
++    return f"demo-token-{phone[-4:]}"
++
++
++def require_auth(auth_header: str) -> str | None:
++    """校验 Authorization 头，返回 phone；失败返回 None。
++    调用方拿到 None 必须返回 401（本次变更的关键约束）。"""
++    if not auth_header.startswith("Bearer "):
++        return None
++    token = auth_header[len("Bearer "):]
++    return token if token.startswith("demo-token-") else None
+diff --git a/src/agent/day30_mock_api.py b/src/agent/day30_mock_api.py
+index 89abcde..f123456 100644
+--- a/src/agent/day30_mock_api.py
++++ b/src/agent/day30_mock_api.py
+@@ -55,18 +55,15 @@ def make_handler(bug_mode: bool = False):
+     def do_POST(self) -> None:
+         if self.path == "/api/login":
+             body = _read_json(self)
+-            phone = str(body.get("phone", ""))
+-            password = str(body.get("password", ""))
+-            if phone == "13800138000" and password == "Test123456":
+-                _send_json(self, 200, {"code": 0, "data": {"token": "demo-token-123"}})
+-            else:
+-                _send_json(self, 401, {"code": 40101, "message": "手机号或密码错误"})
++            ok = verify_credentials(str(body.get("phone", "")), str(body.get("password", "")))
++            if not ok:
++                _send_json(self, 401, {"code": 40101, "message": "手机号或密码错误"})
++                return
++            token = issue_token(str(body.get("phone", "")))
++            _send_json(self, 200, {"code": 0, "data": {"token": token}})
+         return
+@@ -74,22 +71,20 @@ def make_handler(bug_mode: bool = False):
+     def do_GET(self) -> None:
+         if self.path == "/api/orders":
+-            auth = self.headers.get("Authorization", "")
+-            # 旧鉴权：只认写死的 demo-token-123（内联逻辑，本次删除）
+-            if auth != "Bearer demo-token-123":
+-                _send_json(self, 401, {"code": 40101, "message": "未授权"})
+-                return
+-            phone = "13800138000"
++            phone = require_auth(self.headers.get("Authorization", ""))
++            if phone is None:
++                _send_json(self, 401, {"code": 40101, "message": "未授权"})
++                return
+             _send_json(self, 200, {"code": 0, "data": {"orders": _orders_of(phone)}})
+         return

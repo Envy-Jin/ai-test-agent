@@ -1,0 +1,33 @@
+{
+  "scenario": "变更后（重构缺陷模拟）",
+  "bug_mode": true,
+  "exit_code": 1,
+  "stats": {
+    "total": 5,
+    "passed": 2,
+    "failed": 3,
+    "skipped": 0,
+    "errors": 0
+  },
+  "defects": [
+    {
+      "node_id": "outputs.generated_tests.test_api_suite.TestApiLogin::test_invalid_credentials",
+      "status": "failed",
+      "duration": 0.035,
+      "message": "AssertionError: 期望 401 实际 500: {\"code\": 50000, \"message\": \"服务端内部异常（错误凭据未捕获）\"}\nassert 500 == 401\n +  where 500 = <Response [500]>.status_code"
+    },
+    {
+      "node_id": "outputs.generated_tests.test_api_suite.TestApiOrders::test_unauthorized[headers0]",
+      "status": "failed",
+      "duration": 0.005,
+      "message": "AssertionError: 期望 401 实际 200: {\"code\": 0, \"data\": {\"orders\": []}}\nassert 200 == 401\n +  where 200 = <Response [200]>.status_code"
+    },
+    {
+      "node_id": "outputs.generated_tests.test_api_suite.TestApiOrders::test_unauthorized[headers1]",
+      "status": "failed",
+      "duration": 0.005,
+      "message": "AssertionError: 期望 401 实际 200: {\"code\": 0, \"data\": {\"orders\": []}}\nassert 200 == 401\n +  where 200 = <Response [200]>.status_code"
+    }
+  ],
+  "conclusion": "检出 3 个疑似回归缺陷：TC003(错误凭据登录被拒（401）), TC005(无/错 token 访问订单被拒（越权）), TC005(无/错 token 访问订单被拒（越权）)。这些用例在变更前基线是通过的——本次变更极可能引入了回归，建议修复后重跑 affected 范围（Day 31 Bug 分析流程可接续分析）再上线。"
+}

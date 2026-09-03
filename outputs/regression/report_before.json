@@ -1,0 +1,14 @@
+{
+  "scenario": "变更前基线",
+  "bug_mode": false,
+  "exit_code": 0,
+  "stats": {
+    "total": 5,
+    "passed": 5,
+    "failed": 0,
+    "skipped": 0,
+    "errors": 0
+  },
+  "defects": [],
+  "conclusion": "未发现回归缺陷：本次变更范围内的用例全部通过，建议补充 need_add 用例后放行上线。"
+}
