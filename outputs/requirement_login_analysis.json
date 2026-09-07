@@ -1,0 +1,182 @@
+{
+  "feature_name": "用户登录",
+  "summary": "用户可通过手机号或邮箱加密码登录系统，涉及账号锁定、多端在线、图形验证码及JWT Token有效期等核心约束。",
+  "test_suites": [
+    {
+      "suite_name": "正向功能测试",
+      "suite_type": "功能测试",
+      "test_cases": [
+        {
+          "id": "TC001",
+          "title": "使用合法手机号和密码成功登录",
+          "priority": "P0",
+          "type": "功能",
+          "preconditions": [
+            "用户已注册且账号未锁定"
+          ],
+          "steps": [
+            "打开登录页面",
+            "输入合法的11位手机号和正确的包含数字和字母的密码",
+            "点击登录按钮"
+          ],
+          "expected_result": "登录成功，返回访问令牌JWT Token，跳转至系统主页",
+          "test_data": {
+            "phone": "13800138000",
+            "password": "Password123"
+          }
+        },
+        {
+          "id": "TC002",
+          "title": "使用合法邮箱和密码成功登录",
+          "priority": "P0",
+          "type": "功能",
+          "preconditions": [
+            "用户已注册且账号未锁定"
+          ],
+          "steps": [
+            "打开登录页面",
+            "输入合法的标准邮箱和正确的密码",
+            "点击登录按钮"
+          ],
+          "expected_result": "登录成功，返回访问令牌JWT Token，跳转至系统主页",
+          "test_data": {
+            "email": "test@example.com",
+            "password": "Password123"
+          }
+        }
+      ]
+    },
+    {
+      "suite_name": "边界值测试",
+      "suite_type": "边界测试",
+      "test_cases": [
+        {
+          "id": "TC003",
+          "title": "密码刚好8位且包含数字和字母登录",
+          "priority": "P1",
+          "type": "边界",
+          "preconditions": [
+            "用户已注册"
+          ],
+          "steps": [
+            "打开登录页面",
+            "输入手机号，密码输入刚好8位且包含字母和数字",
+            "点击登录按钮"
+          ],
+          "expected_result": "登录成功，返回JWT Token",
+          "test_data": {
+            "phone": "13800138000",
+            "password": "a1234567"
+          }
+        },
+        {
+          "id": "TC004",
+          "title": "手机号刚好11位数字且以1开头登录",
+          "priority": "P1",
+          "type": "边界",
+          "preconditions": [
+            "用户已注册"
+          ],
+          "steps": [
+            "打开登录页面",
+            "输入11位以1开头的手机号与正确密码",
+            "点击登录按钮"
+          ],
+          "expected_result": "登录成功，返回JWT Token",
+          "test_data": {
+            "phone": "13000000000",
+            "password": "Password123"
+          }
+        }
+      ]
+    },
+    {
+      "suite_name": "异常场景测试",
+      "suite_type": "异常测试",
+      "test_cases": [
+        {
+          "id": "TC005",
+          "title": "连续3次登录失败触发图形验证码",
+          "priority": "P1",
+          "type": "异常",
+          "preconditions": [
+            "用户存在"
+          ],
+          "steps": [
+            "打开登录页面",
+            "连续输入错误密码3次"
+          ],
+          "expected_result": "页面提示错误并弹出图形验证码输入框",
+          "test_data": {
+            "phone": "13800138000",
+            "password": "WrongPassword"
+          }
+        },
+        {
+          "id": "TC006",
+          "title": "密码错误超过5次锁定账号30分钟",
+          "priority": "P1",
+          "type": "异常",
+          "preconditions": [
+            "用户存在"
+          ],
+          "steps": [
+            "连续5次输入错误密码并完成验证码",
+            "第6次尝试正确密码登录"
+          ],
+          "expected_result": "系统提示账号已被锁定30分钟，无法登录",
+          "test_data": {
+            "phone": "13800138000",
+            "password": "Password123"
+          }
+        }
+      ]
+    },
+    {
+      "suite_name": "安全性测试",
+      "suite_type": "安全测试",
+      "test_cases": [
+        {
+          "id": "TC007",
+          "title": "密码传输过程使用HTTPS加密验证",
+          "priority": "P1",
+          "type": "安全",
+          "preconditions": [
+            "抓包工具已准备"
+          ],
+          "steps": [
+            "开启抓包工具",
+            "在登录页面输入账号密码并提交",
+            "查看网络传输报文"
+          ],
+          "expected_result": "传输过程中的密码字段已通过HTTPS加密，不可直接明文查看",
+          "test_data": {
+            "phone": "13800138000",
+            "password": "Password123"
+          }
+        }
+      ]
+    },
+    {
+      "suite_name": "兼容性测试",
+      "suite_type": "兼容性测试",
+      "test_cases": [
+        {
+          "id": "TC008",
+          "title": "不同主流浏览器登录页面及功能兼容性",
+          "priority": "P2",
+          "type": "兼容",
+          "preconditions": [
+            "安装Chrome、Firefox、Edge浏览器"
+          ],
+          "steps": [
+            "分别在不同浏览器中打开登录页面",
+            "执行登录操作"
+          ],
+          "expected_result": "页面元素显示正常，登录功能正常流转",
+          "test_data": {}
+        }
+      ]
+    }
+  ]
+}
