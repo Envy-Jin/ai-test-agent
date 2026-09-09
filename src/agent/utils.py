@@ -4,6 +4,7 @@ src/agent/utils.py —— 公共工具函数
 解决 google-genai SDK 中 response.text 类型为 str | None 的问题。
 所有需要访问响应文本的地方，统一走这里。
 """
+import os
 from google.genai import types
 from google.genai.types import GenerateContentResponse
 
@@ -56,3 +57,34 @@ def safe_parts(content: types.Content) -> list[types.Part]:
         ...             print(part.text)
     """
     return content.parts or []
+
+# ── 以下为 Day 36 从 day35_common 并入的路径/IO 公共工具 ──
+# 路径基准钉 __file__（2026-08-28 规范）：utils.py 位于 src/agent/ → 项目根 = 上两级
+_AGENT_DIR: str = os.path.dirname(os.path.abspath(__file__))
+ROOT: str = os.path.dirname(os.path.dirname(_AGENT_DIR))  # src/agent → 项目根
+
+
+def read_text(path: str) -> str:
+    """读 utf-8 文本（errors=replace 兜底乱码）—— 收敛 day31/day32 三份 _read_text。"""
+    with open(path, "r", encoding="utf-8", errors="replace") as f:
+        return f.read()
+
+
+def write_text(path: str, text: str) -> str:
+    """utf-8 落盘并返回路径（返回 str 便于链式拼接/打印）。"""
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(text)
+    return path
+
+
+def schema_doc_path(name: str) -> str:
+    """定位 docs/schemas/<name>（收敛两份 _schema_path）。"""
+    return os.path.join(ROOT, "docs", "schemas", name)
+
+
+def output_dir(sub: str) -> str:
+    """定位并创建 outputs/<sub>，返回目录绝对路径（收敛 day32 的 _out_dir）。"""
+    out: str = os.path.join(ROOT, "outputs", sub)
+    os.makedirs(out, exist_ok=True)
+    return out
+

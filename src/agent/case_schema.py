@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Literal
 from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
-    from test_case_model import TestCase as DataclassTestCase
+    from test_case_model import TestCase as DataclassTestCase  # pyright: ignore[reportMissingImports]
 
 
 class TestCase(BaseModel):
@@ -28,7 +28,7 @@ class TestCase(BaseModel):
 
     def to_dataclass(self) -> DataclassTestCase:
         """转换为 test_case_model.TestCase，便于入库 TestCaseManager。"""
-        from test_case_model import TestCase as DataclassTestCase
+        from test_case_model import TestCase as DataclassTestCase  # pyright: ignore[reportMissingImports]
 
         return DataclassTestCase(
             id=self.id,
