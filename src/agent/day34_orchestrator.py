@@ -306,6 +306,7 @@ def _run_stage(
 
 
 def run_flow(
+    blueprint: list[StageSpec] | None = None,
     *,
     with_llm: bool = False,
     force: bool = False,
@@ -313,7 +314,8 @@ def run_flow(
 ) -> FlowReport:
     """按蓝图顺序执行全流程：一段失败不中断（失败隔离），--fail-fast 才中断。"""
     records: list[StageRecord] = []
-    for spec in BLUEPRINT:
+    plan: list[StageSpec] = BLUEPRINT if blueprint is None else blueprint
+    for spec in plan:
         record = _run_stage(spec, with_llm=with_llm, force=force)
         records.append(record)
         if record.status == "run_failed" and fail_fast:

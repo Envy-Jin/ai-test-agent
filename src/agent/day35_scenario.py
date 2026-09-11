@@ -57,6 +57,9 @@ class ScenarioConfig(BaseModel):
 
     requirement_doc / api_doc / schema_docs / bug_doc 都是【相对项目根】路径；
     mock_port 决定 S6/S7 mock_pytest runner 的端口（分界线：mock 行为是场景资产，端口是蓝图层）。
+    bug_probe 是执行档位（Day 37 新增）：是否跑 S7「埋 Bug 变异自验证」对照回路。
+      默认 True = 向后兼容（与 Day 35 蓝图逐字一致，契约断言不破）；
+      False = 摘掉 S7，且 S8 报告输入自适应（不再喂 junit_bug.xml，防悬空断链）。
     """
 
     name: str                                    # 场景名（同时是产物名前缀：requirement_{name}_analysis.*）
@@ -66,6 +69,7 @@ class ScenarioConfig(BaseModel):
     schema_docs: list[str] = Field(default_factory=list)
     bug_doc: str
     mock_port: int
+    bug_probe: bool = True                       # 执行档位：S7 变异自验证（默认开）
 
 
 LOGIN_SCENARIO = ScenarioConfig(
@@ -114,7 +118,7 @@ def build_blueprint(sc: ScenarioConfig) -> list[StageSpec]:
     report_n: str = "outputs/flow/exec_report_normal.md"
     report_b: str = "outputs/flow/exec_report_bug.md"
 
-    return [
+    stages: list[StageSpec] = [
         StageSpec(
             stage_id="S1_requirement_cases",
             title="需求解析 → 分级用例",
@@ -213,6 +217,7 @@ def build_blueprint(sc: ScenarioConfig) -> list[StageSpec]:
         ),
     ]
 
+    return _apply_bug_probe(stages, sc.bug_probe)
 
 # ═══════════════════════════════════════════════════════
 # 按蓝图派生的盘点（练习 2：盘点逻辑工厂化 —— 豁免集从传入蓝图派生）
@@ -247,6 +252,22 @@ def scan_blueprint(
         status, reason = status_of(spec)
         rows.append((spec, status, reason))
     return rows
+
+def _apply_bug_probe(stages: list[StageSpec], bug_probe: bool) -> list[StageSpec]:
+    """执行档位过滤（Day 37）：bug_probe=False → 摘 S7 对照回路 + S8 报告输入自适应。
+
+    语义（与 day37_bug_probe.apply_bug_probe 同构，此处直接操作真实 StageSpec）：
+      - S6 主干永远在（S7 依赖 S6 单向，不是成组开关）；
+      - S8 报告段 inputs 去掉 junit_bug.xml，避免关档位后报告段悬空断链；
+      - 默认 True 时原样返回 → Day35 契约等价断言 exp1_login_parity 不破。
+    """
+    if bug_probe:
+        return stages
+    kept: list[StageSpec] = [s for s in stages if s.stage_id != "S7_execute_bug"]
+    for spec in kept:
+        if spec.stage_id == "S8_exec_report":
+            spec.inputs = [p for p in spec.inputs if not p.endswith("junit_bug.xml")]
+    return kept
 
 
 # ═══════════════════════════════════════════════════════
