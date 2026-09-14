@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="7" time="1.017" timestamp="2026-09-06T15:57:46.583563+08:00" hostname="Dell-PC"><testcase classname="outputs.generated_tests.test_api_suite.TestApiLogin" name="test_normal" time="0.007" /><testcase classname="outputs.generated_tests.test_api_suite.TestApiLogin" name="test_missing_params[payload0]" time="0.016" /><testcase classname="outputs.generated_tests.test_api_suite.TestApiLogin" name="test_missing_params[payload1]" time="0.005" /><testcase classname="outputs.generated_tests.test_api_suite.TestApiLogin" name="test_invalid_credentials" time="0.085"><failure message="AssertionError: 期望 401 实际 500: {&quot;code&quot;: 50000, &quot;message&quot;: &quot;服务端内部异常（错误凭据未捕获）&quot;}&#10;assert 500 == 401&#10; +  where 500 = &lt;Response [500]&gt;.status_code">self = &lt;test_api_suite.TestApiLogin object at 0x000001AD4FF1B590&gt;
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="7" time="0.667" timestamp="2026-09-14T14:51:06.566817+08:00" hostname="Dell-PC"><testcase classname="outputs.generated_tests.test_api_suite.TestApiLogin" name="test_normal" time="0.009" /><testcase classname="outputs.generated_tests.test_api_suite.TestApiLogin" name="test_missing_params[payload0]" time="0.027" /><testcase classname="outputs.generated_tests.test_api_suite.TestApiLogin" name="test_missing_params[payload1]" time="0.015" /><testcase classname="outputs.generated_tests.test_api_suite.TestApiLogin" name="test_invalid_credentials" time="0.061"><failure message="AssertionError: 期望 401 实际 500: {&quot;code&quot;: 50000, &quot;message&quot;: &quot;服务端内部异常（错误凭据未捕获）&quot;}&#10;assert 500 == 401&#10; +  where 500 = &lt;Response [500]&gt;.status_code">self = &lt;test_api_suite.TestApiLogin object at 0x000001974DB00140&gt;
 base_url = 'http://127.0.0.1:8766'
 
     def test_invalid_credentials(self, base_url):
@@ -8,7 +8,7 @@ E       AssertionError: 期望 401 实际 500: {"code": 50000, "message": "服�
 E       assert 500 == 401
 E        +  where 500 = &lt;Response [500]&gt;.status_code
 
-outputs\generated_tests\test_api_suite.py:39: AssertionError</failure></testcase><testcase classname="outputs.generated_tests.test_api_suite.TestApiOrders" name="test_normal" time="0.029" /><testcase classname="outputs.generated_tests.test_api_suite.TestApiOrders" name="test_unauthorized[headers0]" time="0.030"><failure message="AssertionError: 期望 401 实际 200: {&quot;code&quot;: 0, &quot;data&quot;: {&quot;orders&quot;: []}}&#10;assert 200 == 401&#10; +  where 200 = &lt;Response [200]&gt;.status_code">self = &lt;test_api_suite.TestApiOrders object at 0x000001AD4FF1BC80&gt;
+outputs\generated_tests\test_api_suite.py:39: AssertionError</failure></testcase><testcase classname="outputs.generated_tests.test_api_suite.TestApiOrders" name="test_normal" time="0.025" /><testcase classname="outputs.generated_tests.test_api_suite.TestApiOrders" name="test_unauthorized[headers0]" time="0.004"><failure message="AssertionError: 期望 401 实际 200: {&quot;code&quot;: 0, &quot;data&quot;: {&quot;orders&quot;: []}}&#10;assert 200 == 401&#10; +  where 200 = &lt;Response [200]&gt;.status_code">self = &lt;test_api_suite.TestApiOrders object at 0x000001974DB00800&gt;
 base_url = 'http://127.0.0.1:8766', headers = {}
 
     @pytest.mark.parametrize("headers", [
@@ -22,7 +22,7 @@ E       AssertionError: 期望 401 实际 200: {"code": 0, "data": {"orders": []
 E       assert 200 == 401
 E        +  where 200 = &lt;Response [200]&gt;.status_code
 
-outputs\generated_tests\test_api_suite.py:55: AssertionError</failure></testcase><testcase classname="outputs.generated_tests.test_api_suite.TestApiOrders" name="test_unauthorized[headers1]" time="0.005"><failure message="AssertionError: 期望 401 实际 200: {&quot;code&quot;: 0, &quot;data&quot;: {&quot;orders&quot;: []}}&#10;assert 200 == 401&#10; +  where 200 = &lt;Response [200]&gt;.status_code">self = &lt;test_api_suite.TestApiOrders object at 0x000001AD4FF1BDA0&gt;
+outputs\generated_tests\test_api_suite.py:55: AssertionError</failure></testcase><testcase classname="outputs.generated_tests.test_api_suite.TestApiOrders" name="test_unauthorized[headers1]" time="0.018"><failure message="AssertionError: 期望 401 实际 200: {&quot;code&quot;: 0, &quot;data&quot;: {&quot;orders&quot;: []}}&#10;assert 200 == 401&#10; +  where 200 = &lt;Response [200]&gt;.status_code">self = &lt;test_api_suite.TestApiOrders object at 0x000001974DB00920&gt;
 base_url = 'http://127.0.0.1:8766'
 headers = {'Authorization': 'Bearer wrong-token'}
 

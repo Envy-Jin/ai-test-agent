@@ -26,9 +26,13 @@ from dotenv import load_dotenv
 
 load_dotenv()  # ⚠️ 必须在 import langchain 之前（项目规范）
 
+from typing import TYPE_CHECKING
+
 from langchain_core.messages import HumanMessage, SystemMessage  # noqa: E402
-from langchain_google_genai import ChatGoogleGenerativeAI  # noqa: E402
 from pydantic import BaseModel, Field, ValidationError  # noqa: E402
+
+if TYPE_CHECKING:  # 仅静态检查可见：运行期不 import（Day38 冷启动瘦身）
+    from langchain_google_genai import ChatGoogleGenerativeAI  # noqa: E402
 
 # import 提前放：练习 3 才用到的也在这里（2026-09-02 规范，禁止"补 import"提示）
 from day33_change_schema import (  # noqa: E402
@@ -103,21 +107,26 @@ class RegressionPlan(BaseModel):
 # ═══════════════════════════════════════════════════════
 # 模型（用户指定延续）：主 gemini-3.5-flash-lite / 备 gemini-3.1-flash-lite
 # ═══════════════════════════════════════════════════════
-_primary_llm: ChatGoogleGenerativeAI = ChatGoogleGenerativeAI(
-    model="gemini-3.5-flash-lite",
-    thinking_level="medium",
-)
-_backup_llm: ChatGoogleGenerativeAI = ChatGoogleGenerativeAI(
-    model="gemini-3.1-flash-lite",
-    temperature=0.2,
-)
+def _get_regression_chain():
+    """懒构造回归 Chain（Day 38 冷启动瘦身）。
 
-# Day 29 坑 5：先 with_structured_output 再 with_fallbacks（顺序反了丢类型）
-_regression_chain = _primary_llm.with_structured_output(RegressionPlan).with_fallbacks(
-    [_backup_llm.with_structured_output(RegressionPlan)]
-)
+    为什么：`import langchain_google_genai` 会拖入 transformers + torch（实测 ≈26s），
+    而 day34_orchestrator → day33_report_pipeline → 本模块 的 import 链让 UI/CLI 冷启动
+    整整付 31s（Day37 实测）。构造本身廉价，重的是 import → 把 import + 构造一起进函数，
+    只在真正调用回归分析时才付这个成本。
 
+    ⚠️ 不写返回注解：类型由 with_structured_output / with_fallbacks 推断
+       （项目规范：构建函数返回注解留空，避免复制契约漂移）。
+    """
+    from langchain_google_genai import ChatGoogleGenerativeAI  # 刻意函数内 import（性能）
 
+    primary = ChatGoogleGenerativeAI(model="gemini-3.5-flash-lite", thinking_level="medium")
+    backup = ChatGoogleGenerativeAI(model="gemini-3.1-flash-lite", temperature=0.2)
+    # Day 29 坑 5：先 with_structured_output 再 with_fallbacks（顺序反了丢类型）
+    return primary.with_structured_output(RegressionPlan).with_fallbacks(
+        [backup.with_structured_output(RegressionPlan)]
+    )
+    
 # ═══════════════════════════════════════════════════════
 # Prompt（练习 2 —— reason 必填写在 prompt 里，硬约束）
 # ═══════════════════════════════════════════════════════
@@ -200,7 +209,7 @@ def analyze_regression(
         HumanMessage(content=_render_regression_input(diff_text, change, registry)),
     ]
     try:
-        raw = _regression_chain.invoke(messages)
+        raw = _get_regression_chain().invoke(messages)
         return parse_regression_plan(raw)
     except Exception as exc:
         print(f"[analyze_regression] 调用失败: {exc}")
@@ -277,7 +286,7 @@ def render_plan_markdown(plan: RegressionPlan) -> str:
 # ═══════════════════════════════════════════════════════
 def exp3_build_chain_smoke() -> None:
     """零 API 冒烟：Chain 构建可用（模块级）+ 收窄函数喂样例 dict 验证（练习 2）。"""
-    print(f"回归 Chain 类型: {type(_regression_chain).__name__}（构建成功，未调用 API）")
+    print(f"回归 Chain 类型: {type(_get_regression_chain()).__name__}（构建成功，未调用 API）")
     sample_raw: dict[str, object] = {
         "change_summary": "冒烟样例：未调用真实模型",
         "impacted_modules": ["login"],

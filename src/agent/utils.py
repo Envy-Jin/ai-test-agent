@@ -4,9 +4,14 @@ src/agent/utils.py —— 公共工具函数
 解决 google-genai SDK 中 response.text 类型为 str | None 的问题。
 所有需要访问响应文本的地方，统一走这里。
 """
+from __future__ import annotations  # Day38：注解延迟求值，配合下面 TYPE_CHECKING（缺了会 NameError）
+
 import os
-from google.genai import types
-from google.genai.types import GenerateContentResponse
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:  # 仅静态检查可见（Day38 冷启动瘦身）：这两个类型只用于函数注解
+    from google.genai import types
+    from google.genai.types import GenerateContentResponse
 
 def safe_text(response: GenerateContentResponse, default: str = "") -> str:
     """

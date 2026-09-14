@@ -13,9 +13,9 @@
 """
 from __future__ import annotations
 
-import os
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 # ── import 桥（决策 C）：真实资产在 src/agent 平铺、彼此裸 import → 把 src/agent 放 sys.path 首位
 # 注意：pyproject [tool.pyright].extraPaths 需同步加 "src/agent"，否则运行能过但 pyright 报红
@@ -25,9 +25,7 @@ if str(_AGENT_DIR) not in sys.path:
 
 import streamlit as st  # noqa: E402  # 需先桥接路径再导第三方无关，仅风格顺序
 
-# 真实资产（flat import，与 src/agent 内脚本一致；全部来自 day34/35 三层）
-from day34_orchestrator import FlowReport, run_flow  # noqa: E402
-from day34_flow_map import StageSpec  # noqa: E402
+# 轻依赖资产：盘点页签页面加载就要用（day35_scenario 已不含执行器顶级导入 → 冷启动便宜）
 from day35_scenario import (  # noqa: E402
     LOGIN_SCENARIO,
     REGISTER_SCENARIO,
@@ -36,6 +34,10 @@ from day35_scenario import (  # noqa: E402
     scan_blueprint,
 )
 from utils import ROOT, read_text  # noqa: E402
+
+if TYPE_CHECKING:  # 仅静态检查可见（Day38 冷启动瘦身）：这两个只用于类型注解
+    from day34_flow_map import StageSpec
+    from day34_orchestrator import FlowReport
 
 
 # ── 场景注册表（数据：UI 只读不改）──
@@ -127,7 +129,7 @@ def main() -> None:
     with tab_overview:
         st.subheader(f"蓝图盘点（{scenario_name} · {len(blueprint)} 段 · 零 API）")
         rows: list[dict[str, str]] = _render_scan_table(blueprint)
-        st.dataframe(rows, use_container_width=True, hide_index=True)
+        st.dataframe(rows, width="stretch", hide_index=True)
         st.caption("状态图例：reused=产物在位可回放 · run_ready=code 段现场跑 · needs_api=llm 段待补跑 · "
                    "missing_input=资产缺口（register 缺 schemas/bugs 即此态）· manual_pending=评审门等人")
 
@@ -135,6 +137,9 @@ def main() -> None:
         st.subheader("全流程执行")
         st.write("按蓝图顺序执行：失败隔离（一段挂了不中断），勾 fail_fast 才中断。")
         if st.button("▶ 执行全流程", type="primary"):
+            
+            from day34_orchestrator import run_flow  # 延迟导入（Day38）：页面加载不为它付冷启动
+
             with st.spinner("正在执行（mock/报告段本地跑，模型段按档位跳过或调真 API）..."):
                 report = run_flow(blueprint=blueprint, with_llm=with_llm,
                                   force=force, fail_fast=fail_fast)
@@ -145,7 +150,7 @@ def main() -> None:
             st.success(f"最近一次执行：场景 {st.session_state['last_scenario']} · "
                        f"bug_probe={st.session_state['last_bug_probe']}")
             st.dataframe(_report_to_rows(st.session_state["last_report"]),
-                         use_container_width=True, hide_index=True)
+                         width="stretch", hide_index=True)
 
     with tab_artifacts:
         st.subheader("产物浏览（outputs/flow）")

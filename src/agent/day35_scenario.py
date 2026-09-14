@@ -45,7 +45,6 @@ from day34_flow_map import (  # noqa: E402
     _abs,
     _exists_nonempty,
 )
-from day34_orchestrator import _fingerprints_of, _run_stage  # noqa: E402  # 执行器机制（练习 3）
 from day35_common import ROOT, output_dir, write_text  # noqa: E402  # 抽好的公共底座（练习 1 复用）
 
 
@@ -253,6 +252,33 @@ def scan_blueprint(
         rows.append((spec, status, reason))
     return rows
 
+
+def select_stages(blueprint: list[StageSpec], wanted: set[str]) -> list[StageSpec]:
+    """按阶段 id 取子集，并自动补齐依赖闭包（Day 38：CLI --stage / 未来 UI 阶段多选）。
+
+    为什么需要：裸过滤 `[s for s in bp if s.stage_id in wanted]` 只保证"想要的段在"，
+    不保证它们的输入有产出者——子集里缺上游 → 执行期 run_failed（假失败）。
+    算法：从 wanted 出发，沿 outputs→inputs 反向上溯 producer 直到不动点；
+          最后按【原蓝图顺序】取子序列（原序 = 拓扑序 → 子序列天然拓扑正确）。
+    返回：新列表（原顺序）；wanted 里不存在的 stage_id 静默忽略（是否报错由入口层决定）。
+    """
+    by_id: dict[str, StageSpec] = {spec.stage_id: spec for spec in blueprint}
+    by_output: dict[str, StageSpec] = {out: spec for spec in blueprint for out in spec.outputs}
+    keep: set[str] = set()
+    stack: list[str] = [sid for sid in wanted if sid in by_id]
+    while stack:
+        sid: str = stack.pop()
+        if sid in keep:
+            continue
+        keep.add(sid)
+        for inp in by_id[sid].inputs:
+            producer: StageSpec | None = by_output.get(inp)
+            if producer is not None:
+                stack.append(producer.stage_id)
+    return [spec for spec in blueprint if spec.stage_id in keep]
+
+
+
 def _apply_bug_probe(stages: list[StageSpec], bug_probe: bool) -> list[StageSpec]:
     """执行档位过滤（Day 37）：bug_probe=False → 摘 S7 对照回路 + S8 报告输入自适应。
 
@@ -350,6 +376,8 @@ def exp3_factory_rerun() -> bool:
     断言：两次重生成指纹一致（确定性不漂移），且与既有产物指纹一致（与 Day 34 同源）。
     教学点：执行器不认识"login"——它只认契约；工厂蓝图 = 合法输入（黑盒红利）。
     """
+    from day34_orchestrator import _fingerprints_of, _run_stage  # noqa: E402  # 执行器机制（练习 3）
+
     spec: StageSpec = next(s for s in build_blueprint(LOGIN_SCENARIO) if s.stage_id == "S4_test_codegen")
     before: list[str] = _fingerprints_of(spec)
     print(f"  ▶ 既有 S4 产物指纹: {before}")

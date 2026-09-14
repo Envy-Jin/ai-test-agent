@@ -1,6 +1,6 @@
 # 全流程执行报告：login · 埋 Bug 版（对照）
 
-**日期**: 2026-09-06 15:57
+**日期**: 2026-09-14 14:51
 **执行**: mock 靶场 + outputs/generated_tests（7 pytest node）
 
 ## 执行摘要
@@ -14,15 +14,15 @@
 ## 详细结果
 | 状态 | 用例 | 模块 | 耗时(s) | 说明 |
 |------|------|------|---------|------|
-| passed | test_normal | login | 0.007 |  |
-| passed | test_missing_params[payload0] | login | 0.016 |  |
-| passed | test_missing_params[payload1] | login | 0.005 |  |
-| failed | test_invalid_credentials | login | 0.085 | AssertionError: 期望 401 实际 500: {"code": 50000, "message": "服务端内部异常（错误凭据未捕获）"}
+| passed | test_normal | login | 0.009 |  |
+| passed | test_missing_params[payload0] | login | 0.027 |  |
+| passed | test_missing_params[payload1] | login | 0.015 |  |
+| failed | test_invalid_credentials | login | 0.061 | AssertionError: 期望 401 实际 500: {"code": 50000, "message": "服务端内部异常（错误凭据未捕获）"}
 as |
-| passed | test_normal | orders | 0.029 |  |
-| failed | test_unauthorized[headers0] | orders | 0.030 | AssertionError: 期望 401 实际 200: {"code": 0, "data": {"orders": []}}
+| passed | test_normal | orders | 0.025 |  |
+| failed | test_unauthorized[headers0] | orders | 0.004 | AssertionError: 期望 401 实际 200: {"code": 0, "data": {"orders": []}}
 assert 200 == |
-| failed | test_unauthorized[headers1] | orders | 0.005 | AssertionError: 期望 401 实际 200: {"code": 0, "data": {"orders": []}}
+| failed | test_unauthorized[headers1] | orders | 0.018 | AssertionError: 期望 401 实际 200: {"code": 0, "data": {"orders": []}}
 assert 200 == |
 
 ## 失败用例（疑似缺陷）
