@@ -235,18 +235,37 @@ def render_exec_report(
 
 
 def _run_exec_report(spec: StageSpec) -> tuple[bool, str]:
-    """内置处理器：读 junit ×2 + 注册表 → 渲染两份执行报告（报告回路）。"""
+    """内置处理器：读 junit → 注册表 → 渲染执行报告（报告回路）。
+
+    Day 39 修复：**按 spec.outputs 驱动**，不再硬编码 ("normal", "bug")。
+    写死版本让 --no-bug-probe（摘掉 S7）只做了一半：
+      · 干净环境 junit_bug.xml 不在 → open() 抛 FileNotFoundError → 整段 run_failed；
+      · 有旧产物时 → 拿【陈旧】junit_bug 再渲染一份 bug 报告（产出与档位不符）。
+    现在：outputs 里有几份就渲染几份；对应 junit 不在则跳过并打印原因。
+    """
     registry: list[CaseEntry] = load_case_registry(REGISTRY_PATH)
-    for idx, keyword in enumerate(("normal", "bug")):
+    rendered: list[str] = []
+    skipped: list[str] = []
+    for out_rel in spec.outputs:
+        keyword: str = "normal" if "normal" in out_rel else "bug"
         junit_abs: str = _abs(f"outputs/flow/junit_{keyword}.xml")
-        out_abs: str = _abs(spec.outputs[idx])
+        if not os.path.isfile(junit_abs):
+            skipped.append(f"{out_rel}（{keyword} 版 junit 不存在）")
+            print(f"  ⏭ 跳过 {out_rel}：{keyword} 版 junit 不存在")
+            continue
         with open(junit_abs, "r", encoding="utf-8") as f:
             junit_text: str = f.read()
         md: str = render_exec_report(keyword, junit_text, registry)
-        with open(out_abs, "w", encoding="utf-8") as f:
+        with open(_abs(out_rel), "w", encoding="utf-8") as f:
             f.write(md)
-        print(f"  ▶ {spec.outputs[idx]} 已渲染")
-    return True, f"{len(spec.outputs)} 份执行报告已落盘"
+        rendered.append(out_rel)
+        print(f"  ▶ {out_rel} 已渲染")
+    if not rendered:
+        return False, "没有可渲染的报告（对应 junit 均不存在）：" + "、".join(skipped)
+    detail: str = f"{len(rendered)} 份执行报告已落盘"
+    if skipped:
+        detail += "；跳过：" + "、".join(skipped)
+    return True, detail
 
 
 # ═══════════════════════════════════════════════════════

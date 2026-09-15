@@ -45,7 +45,7 @@ def test_assert_exception():
 
     # 验证除零会抛 ZeroDivisionError
     with pytest.raises(ZeroDivisionError):
-      1 / 0
+      _ = 1 / 0
 
     # 验证访问不存在 key 会抛 KeyError
     with pytest.raises(KeyError):

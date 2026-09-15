@@ -10,7 +10,7 @@
     .venv/Scripts/python.exe cli.py report --name exec_report_normal.md
 
 冒烟（无浏览器无 API）：
-    .venv/Scripts/python.exe -m pytest tests/test_day38_cli.py -q     # CliRunner 无头
+    .venv/Scripts/python.exe -m pytest tests/test_day39_cli.py -q     # CliRunner 无头
 
 设计纪律（Day 38 步骤 1 决策）：
   - 入口层最薄：命令体只做「参数 → 调 day34/35 资产 → 打印」

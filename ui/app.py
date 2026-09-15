@@ -4,12 +4,13 @@
 运行（在 ai_test_agent 项目根）：
     .venv/Scripts/python.exe -m streamlit run ui/app.py
 冒烟（无浏览器无 API）：
-    .venv/Scripts/python.exe -m pytest tests/test_day37_app.py -q     # AppTest 无头
+    .venv/Scripts/python.exe -m pytest tests/test_day37_app.py tests/test_day39_ui_stages.py -q
 
 设计纪律（Day37 步骤 1 决策 A/D）：
   - 页面加载零 API：只跑 build_blueprint + scan_blueprint（纯文件系统盘点）
   - 昂贵动作（run_flow）只在按钮按下时执行，结果存 st.session_state 防 rerun 丢失
   - UI 里没有业务 for 循环：表格/报告全部委托 day34/35 资产函数
+    （Day39 5.13 补充：**选段闭包也算业务**，同样委托 select_stages，UI 只做展示整形）
 """
 from __future__ import annotations
 
@@ -32,6 +33,7 @@ from day35_scenario import (  # noqa: E402
     ScenarioConfig,
     build_blueprint,
     scan_blueprint,
+    select_stages,
 )
 from utils import ROOT, read_text  # noqa: E402
 
@@ -102,6 +104,36 @@ def _report_to_rows(report: FlowReport) -> list[dict[str, str | float]]:
         )
     return out
 
+def _title_of(blueprint: list[StageSpec], stage_id: str) -> str:
+    """stage_id → 标题（仅控件展示用；找不到给空串，不抛异常）。"""
+    return next((spec.title for spec in blueprint if spec.stage_id == stage_id), "")
+
+
+def _fmt_stage(blueprint: list[StageSpec], stage_id: str) -> str:
+    """多选框的显示文案：`S8_exec_report · JUnit → 执行报告（缺陷反查注册表）`。
+
+    ⚠️ 精确 id 必须显示在最前面：文档/CLI 里出现的都是 stage_id，
+       把它藏起来（只显示标题）会让"页面上选了哪段"对不上日志。
+    """
+    return f"{stage_id} · {_title_of(blueprint, stage_id)}"
+
+
+def _resolve_ui_stages(blueprint: list[StageSpec], picked: list[str]) -> list[StageSpec]:
+    """UI 侧选段：空选 = 全流程；非空 = 精确 id 子集 + 自动补齐上游依赖闭包。
+
+    为什么 UI 不复用 CLI 的 `resolve_stage_ids`（Day 38 决策，别"顺手统一"）：
+      · 那个函数是**命令行特有的容错**——用户敲的是裸字符串（`S4`），所以要"唯一前缀
+        猜谜 + 歧义报错"，而它 raise 的是 `click.BadParameter`；
+      · UI 的输入来自 **multiselect 的 options**，选项就是 `build_blueprint` 自己给出的
+        精确 stage_id → 天然精确、天然无歧义，既不需要猜谜也不需要校验；
+      · 跨入口层横向 import（`ui` 引 `cli`）会把 click 拉进 UI 冷启动，还会制造
+        "两个入口互为依赖"的假耦合。
+    闭包补齐这一步是**资产层的业务**，所以委托 `select_stages`（UI 不自己写图算法）。
+    """
+    if not picked:
+        return blueprint
+    return select_stages(blueprint, set(picked))
+
 
 def main() -> None:
     """页面主体（streamlit run 把本文件当 __main__ 执行）。"""
@@ -136,19 +168,40 @@ def main() -> None:
     with tab_run:
         st.subheader("全流程执行")
         st.write("按蓝图顺序执行：失败隔离（一段挂了不中断），勾 fail_fast 才中断。")
-        if st.button("▶ 执行全流程", type="primary"):
-            
+
+        # ── 选段（Day39 5.13）：options 来自【当前档位的蓝图】—— 关掉 S7 时它就不在选项里 ──
+        picked: list[str] = st.multiselect(
+            "只跑指定阶段（留空 = 全流程）",
+            options=[spec.stage_id for spec in blueprint],
+            default=[],
+            format_func=lambda sid: _fmt_stage(blueprint, sid),
+            key=f"stage_pick_{scenario_name}_{bug_probe_on}",
+            help="依赖上游自动补齐（闭包）：只选 S8_exec_report → 自动带上 S3/S4/S6/S7。",
+        )
+        plan: list[StageSpec] = _resolve_ui_stages(blueprint, picked)
+        if not plan:
+            st.error("当前档位下没有可执行的段（选择已被档位过滤，如关档位后仍选着 S7）→ 请重选。")
+        elif picked:
+            added: list[str] = [spec.stage_id for spec in plan if spec.stage_id not in set(picked)]
+            st.info(f"子集执行：{len(plan)} 段（自动补齐上游 {len(added)} 段：{', '.join(added) or '无'}）")
+        else:
+            st.caption(f"全流程：{len(plan)} 段（未选段 = 全跑，与 CLI 不带 --stage 一致）")
+
+        if st.button("▶ 执行", type="primary", disabled=not plan):
             from day34_orchestrator import run_flow  # 延迟导入（Day38）：页面加载不为它付冷启动
 
             with st.spinner("正在执行（mock/报告段本地跑，模型段按档位跳过或调真 API）..."):
-                report = run_flow(blueprint=blueprint, with_llm=with_llm,
+                report = run_flow(blueprint=plan, with_llm=with_llm,
                                   force=force, fail_fast=fail_fast)
             st.session_state["last_report"] = report
             st.session_state["last_scenario"] = scenario_name
             st.session_state["last_bug_probe"] = bug_probe_on
+            st.session_state["last_stages"] = [spec.stage_id for spec in plan]
         if "last_report" in st.session_state:
+            scope: list[str] = st.session_state.get("last_stages", [])
             st.success(f"最近一次执行：场景 {st.session_state['last_scenario']} · "
-                       f"bug_probe={st.session_state['last_bug_probe']}")
+                       f"bug_probe={st.session_state['last_bug_probe']} · {len(scope)} 段"
+                       + ("（全流程）" if len(scope) == len(blueprint) else "（子集）"))
             st.dataframe(_report_to_rows(st.session_state["last_report"]),
                          width="stretch", hide_index=True)
 
@@ -158,8 +211,8 @@ def main() -> None:
         if not reports:
             st.info("outputs/flow 下暂无 .md 报告——先到「全流程执行」跑一次。")
         else:
-            picked: str = st.selectbox("选择报告", list(reports.keys()))
-            st.markdown(reports[picked])
+            picked_report: str = st.selectbox("选择报告", list(reports.keys()))
+            st.markdown(reports[picked_report])
 
 
 if __name__ == "__main__":

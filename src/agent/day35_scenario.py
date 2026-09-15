@@ -277,15 +277,47 @@ def select_stages(blueprint: list[StageSpec], wanted: set[str]) -> list[StageSpe
                 stack.append(producer.stage_id)
     return [spec for spec in blueprint if spec.stage_id in keep]
 
+def find_blueprint_contract_violations(blueprint: list[StageSpec]) -> list[str]:
+    """检查蓝图的「反向索引」契约，返回违规描述列表（空 = 合规）。
 
+    为什么需要（Day 39）：select_stages 的 `by_output` 用输出路径字符串**逐字相等**做键，
+    两个隐含前提一旦破了**不报错、只静默出错**：
+      ① 输出路径全局唯一 —— 两个 stage 声明同一输出文件时，字典推导**后者覆盖前者**，
+         于是"某段的上游生产者"被认错/丢失 → 闭包少补上游 → 执行期才 run_failed；
+      ② 路径写法规范 —— 索引靠逐字匹配，`./outputs/x` 与 `outputs/x` 是两个键，
+         写法不规范就会被误判为"外部输入" → 同样静默不补齐。
+
+    本函数把它们从"隐含约定"提升为**可断言契约**（纯函数：不改入参、不读文件系统、
+    不改 build_blueprint 行为）。消费端 = tests/test_day39_blueprint.py 的契约测试。
+    """
+    violations: list[str] = []
+    owners: dict[str, str] = {}
+    for spec in blueprint:
+        if spec.kind != "manual" and not spec.outputs:
+            violations.append(f"{spec.stage_id}：非 manual 段却无 outputs")
+        for out in spec.outputs:
+            owner: str | None = owners.get(out)
+            if owner is not None and owner != spec.stage_id:
+                violations.append(f"输出重复：{out!r} 同时由 {owner} 与 {spec.stage_id} 声明")
+            else:
+                owners[out] = spec.stage_id
+        for path in (*spec.inputs, *spec.outputs):
+            if path.startswith("./") or path.startswith(".\\") or "\\" in path:
+                violations.append(f"{spec.stage_id}：路径未规范化 {path!r}（禁 ./ 前缀与反斜杠）")
+    return violations
 
 def _apply_bug_probe(stages: list[StageSpec], bug_probe: bool) -> list[StageSpec]:
-    """执行档位过滤（Day 37）：bug_probe=False → 摘 S7 对照回路 + S8 报告输入自适应。
+    """执行档位过滤（Day 37，Day 39 修补）：bug_probe=False → 摘 S7 + S8 输入/输出双自适应。
 
     语义（与 day37_bug_probe.apply_bug_probe 同构，此处直接操作真实 StageSpec）：
       - S6 主干永远在（S7 依赖 S6 单向，不是成组开关）；
-      - S8 报告段 inputs 去掉 junit_bug.xml，避免关档位后报告段悬空断链；
+      - S8 报告段 inputs 去掉 junit_bug.xml（不再等一个不会产出的文件）；
+      - S8 报告段 outputs 同步去掉 exec_report_bug.md（Day 39 补：原版只改 inputs，
+        outputs 仍要两份 → 与 _run_exec_report 的硬编码叠加后，干净环境 S8 run_failed）；
       - 默认 True 时原样返回 → Day35 契约等价断言 exp1_login_parity 不破。
+    ⚠️ 就地修改：本函数直接改传入 spec 的字段（依赖 build_blueprint 每次新建对象）。
+       禁止把 build_blueprint 改成 `return list(BLUEPRINT)`——浅拷贝共享内层对象，
+       一次 --no-bug-probe 就会永久污染模块级 BLUEPRINT。
     """
     if bug_probe:
         return stages
@@ -293,6 +325,7 @@ def _apply_bug_probe(stages: list[StageSpec], bug_probe: bool) -> list[StageSpec
     for spec in kept:
         if spec.stage_id == "S8_exec_report":
             spec.inputs = [p for p in spec.inputs if not p.endswith("junit_bug.xml")]
+            spec.outputs = [p for p in spec.outputs if not p.endswith("exec_report_bug.md")]
     return kept
 
 

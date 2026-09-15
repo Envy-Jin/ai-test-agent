@@ -1,188 +1,150 @@
 # AI 测试辅助 Agent
 
-## 项目简介
+> 用 **Cursor + Gemini + LangChain** 搭建的软件测试辅助 Agent。
+> 学习项目：6 周计划，当前进度 **第 6 周（Day 39：测试 + 文档）**。
 
-**AI 测试辅助 Agent** 是一个基于大语言模型的软件测试辅助工具，旨在帮助测试人员提升效率、减少重复劳动。通过 Agent 编排与工具调用，项目可覆盖常见测试场景，包括：
+## 这是什么
 
-- **生成测试用例**：根据需求文档、接口定义或源代码，自动生成结构化测试用例
-- **分析 Bug**：结合日志、堆栈与上下文，辅助定位问题根因并给出修复建议
-- **接口测试**：解析 API 文档，生成并执行接口测试脚本，汇总测试结果
+把"测试工作流"拆成 **9 段流水线**，每段只做一件事，可单独跑、可断点续跑：
 
-项目采用模块化设计，核心逻辑位于 `src/agent/`，便于后续扩展更多 Agent 角色与测试工具。
+```
+docs（需求 / 接口 / schema / Bug）
+  → S1  需求解析 → 分级用例        (LLM)
+  → S2  用例评审门                 (人工)
+  → S3  接口文档 → 测试计划        (LLM)
+  → S4  计划 → pytest 套件         (本地)
+  → S5  字段规则 → 测试数据        (LLM)
+  → S6  执行正常版 → JUnit XML     (本地)
+  → S7  执行埋 Bug 对照版 → JUnit  (本地)
+  → S8  JUnit → 执行报告           (本地)
+  → S9  Bug 报告 → 分析建议        (LLM)
+  → outputs/（报告 / JUnit / 生成的套件）
+```
 
-## 当前功能
+**关键设计：只有 S1 / S3 / S5 / S9 需要 `GEMINI_API_KEY`；S4 / S6 / S7 / S8 是纯本地段**
+（渲染 pytest 代码 + mock 接口 + 真跑 pytest）——**没有 API Key 也能跑通整条"代码链"**。
 
-| 模块 | 文件 | 功能说明 |
-|------|------|----------|
-| 需求解析 | `requirement_parser.py` | 从 `.txt` 需求文档提取功能点、子功能、约束条件，支持单文件/批量解析 |
-| 需求分析 | `requirement_analyzer.py` | 统计需求字数与行数，提取含关键词的规则行，输出 JSON |
-| 测试用例管理 | `test_case_model.py` | `TestCase` 数据类 + `TestCaseManager`（增删查、JSON 读写、Markdown 导出） |
-| 测试用例预生成 | `test_case_pregenerator.py` | 根据解析结果为约束条件自动生成边界值测试用例框架 |
-| 测试数据生成 | `data_generator.py` | 按字段定义批量生成随机测试数据 |
-| 多格式输出 | `requirement_parser.py` | 解析结果支持 **JSON / Markdown / CSV** 三种格式 |
-| 环境检查 | `check_env.py` | 验证 Python 版本、虚拟环境、依赖是否就绪 |
+## 功能列表
 
-## 技术栈
+| 功能 | 段 | 需要 API | 入口 |
+|---|---|---|---|
+| 需求文档 → 分级测试用例（正向 / 边界 / 异常 / 安全） | S1 | ✅ | CLI `run` · UI |
+| 用例评审门（两段式：预览 → 入库） | S2 | ❌ 人工 | 人工 |
+| 接口文档 → pytest 接口测试计划 | S3 | ✅ | CLI `run --stage S3` · UI 多选 |
+| 计划 → 可执行 pytest 套件（含 `conftest.py`） | S4 | ❌ | 自动 |
+| 字段规则 → 测试数据（边界 / 异常 / SQL / Mock JSON） | S5 | ✅ | 自动 |
+| 执行（正常版 / 埋 Bug 对照版）→ JUnit XML | S6 / S7 | ❌ | 自动 |
+| JUnit → Markdown 执行报告 | S8 | ❌ | CLI `report` |
+| Bug 报告 → 复现步骤 + 加固建议 | S9 | ✅ | 自动 |
+| 资产盘点（零 API）：产物在位 → `reused` 断点续跑 | 全部 | ❌ | CLI `scan` · UI |
+| **只跑指定阶段**：自动补齐上游依赖闭包 | 任意 | 视段 | CLI `run --stage S4,S8` · UI 多选 |
 
-| 类别 | 技术 | 说明 |
-|------|------|------|
-| 语言 | Python 3.10+ | 主开发语言 |
-| 大模型 | Google Gemini | 通过 Gemini API 提供推理与生成能力（规划中） |
-| Agent 框架 | LangChain | Agent 编排、工具链与 Prompt 管理（规划中） |
-| 配置管理 | python-dotenv | 从 `.env` 加载 API Key 等环境变量 |
-| 数据校验 | Pydantic | 结构化输入输出与类型约束 |
-| HTTP 客户端 | requests | 接口测试与外部 API 调用 |
-| 测试框架 | pytest | 单元测试与断言验证 |
+### 界面截图
+
+![资产盘点（零 API，9 段五态）](docs/images/ui_scan.png)
+
+![产物浏览](docs/images/ui_report.png)
 
 ## 快速开始
 
-### 1. 克隆项目并进入目录
+### 1. 环境
 
 ```bash
-git clone <your-repo-url>
 cd ai_test_agent
-```
-
-### 2. 创建虚拟环境并安装依赖
-
-```bash
 python -m venv .venv
-
-# Windows
-.venv\Scripts\activate
-
-# macOS / Linux
-source .venv/bin/activate
-
+.venv\Scripts\activate            # Windows；macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
+python check_env.py               # 环境自检
 ```
 
-### 3. 配置环境变量
+### 2. 配置
 
-在项目根目录创建或编辑 `.env` 文件，填入你的 API Key：
+在项目根新建 `.env`：
 
-```env
-GEMINI_API_KEY=your_api_key_here
-LANGCHAIN_API_KEY=your_key_here
+```ini
+GEMINI_API_KEY=你的key             # 仅 S1/S3/S5/S9 需要；只跑代码链可以不填
+# 可选：走本地代理
+HTTPS_PROXY=http://127.0.0.1:7890
 ```
 
-### 4. 验证环境
+模型：主 `gemini-3.5-flash-lite`；备 `gemini-3.1-flash-lite`（fallback 前缀 `google_genai:`）。
+
+### 3. 跑起来（两种入口任选）
+
+**A. 命令行**
 
 ```bash
-python check_env.py
+python cli.py --help                                 # 三个子命令：scan / run / report
+python cli.py scan   --scenario login                # ① 盘点 9 段资产状态（零 API）
+python cli.py scan   --scenario login --no-bug-probe  #    关掉 S7 对照回路 → 8 段
+python cli.py run    --scenario login                # ② 执行（零 API：只跑 S4/S6/S7/S8）
+python cli.py run    --scenario login --with-llm     #    真 API：补跑 S1/S3/S5/S9
+python cli.py run    --scenario login --stage S8     #    只跑某段（自动补齐依赖上游）
+python cli.py report --name exec_report_normal.md    # ③ 看报告
 ```
 
-## 使用示例
-
-### 需求文档解析（命令行）
+**B. Web 界面**
 
 ```bash
-# 解析单个需求文件，输出 JSON（默认）
-python src/agent/requirement_parser.py docs/requirement.txt
-
-# 显示详细解析结果
-python src/agent/requirement_parser.py docs/requirement.txt -v
-
-# 输出 Markdown 格式
-python src/agent/requirement_parser.py docs/requirement_ecommerce.txt -f markdown -o docs/ecommerce_parsed.md
-
-# 输出 CSV 格式
-python src/agent/requirement_parser.py docs/requirement_education.txt -f csv -o docs/education_parsed.csv
-
-# 解析并预生成边界值测试用例
-python src/agent/requirement_parser.py docs/requirement.txt -t -o docs/parsed_requirement.json
-
-# 批量解析 docs/ 目录下所有 .txt 文件
-python src/agent/requirement_parser.py -b docs -v
+streamlit run ui/app.py
 ```
 
-### 测试用例管理（Python API）
+打开后：
+- 「🗺️ 蓝图盘点」：9 段资产状态一览（零 API）。
+- 「▶ 全流程执行」：**「只跑指定阶段」留空 = 全跑**；选 `S8_exec_report` → 页面提示「子集执行：5 段（自动补齐上游 4 段）」→ 点「执行」。
+- 「📁 产物浏览」：直接读 `outputs/flow` 下的报告。
 
-```python
-from src.agent.test_case_model import TestCase, TestCaseManager
-
-manager = TestCaseManager()
-manager.add_case(TestCase(
-    id="TC-001",
-    title="用户登录正常流程",
-    steps=["打开登录页", "输入账号密码", "点击登录"],
-    expected_result="跳转首页",
-    priority="P0",
-))
-
-manager.save_to_json("docs/sample_test_cases.json")
-manager.export_to_markdown("docs/sample_test_cases.md")
-print(manager.count_by_priority())  # {'P0': 1}
-```
-
-### 测试用例预生成（Python API）
-
-```python
-from src.agent.requirement_parser import read_requirement_file, parse_requirement
-from src.agent.test_case_pregenerator import generate_from_parsed_requirement
-
-text = read_requirement_file("docs/requirement.txt")
-parsed = parse_requirement(text)
-cases_by_feature = generate_from_parsed_requirement(parsed)
-
-for name, cases in cases_by_feature.items():
-    print(f"{name}: 生成 {len(cases)} 条边界用例")
-```
-
-## 测试说明
-
-项目使用 **pytest** 进行单元测试，测试文件位于 `tests/` 目录。
-
-```bash
-# 运行全部测试
-pytest
-
-# 显示详细输出
-pytest -v
-
-# 只运行需求解析器测试
-pytest tests/test_requirement_parser.py -v
-
-# 只运行基础练习测试
-pytest tests/test_basic.py -v
-
-# 显示打印信息（调试用）
-pytest -s
-```
-
-测试覆盖范围包括：
-
-- 功能分段、子功能提取、约束条件提取
-- 完整需求解析流程
-- JSON / Markdown / CSV 多格式输出
-- 约束条件数字提取（边界值预生成）
-
-## 第 1 周学习进度
-
-| 天数 | 主题 | 状态 | 产出 |
-|------|------|------|------|
-| Day 1-2 | 项目搭建与环境配置 | ✅ 完成 | 目录结构、`.env`、`check_env.py`、`README` |
-| Day 3 | Python 语法（上） | ✅ 完成 | 推导式、类型注解、异常处理、文件读写（`day3_practice.py`） |
-| Day 4 | Python 语法（下） | ✅ 完成 | dataclass、JSON 序列化、环境变量、HTTP 请求（`day4_practice.py`） |
-| Day 5 | 测试用例数据模型 | ✅ 完成 | `test_case_model.py`（TestCase + TestCaseManager） |
-| Day 6 | 正则表达式 | ✅ 完成 | 需求解析器 `requirement_parser.py`、正则练习（`day6_practice.py`） |
-| Day 7 | 集成与测试 | ✅ 完成 | 预生成器 `test_case_pregenerator.py`、pytest 单元测试、多格式输出、批量解析 |
-
-> 第 1 周目标：完成需求文档 → 结构化解析 → 边界用例预生成 的完整链路。第 2 周计划接入 Gemini + LangChain 实现 AI 驱动的用例生成与 Bug 分析。
-
-## 项目文档
-
-- 架构说明：[docs/architecture.md](docs/architecture.md)
-- 示例需求：`docs/requirement.txt`、`docs/requirement_ecommerce.txt`、`docs/requirement_education.txt`、`docs/requirement_social.txt`
-
-## 目录结构（简要）
+## 项目结构
 
 ```
 ai_test_agent/
-├── src/agent/          # 核心业务模块
-├── docs/               # 需求文档与解析/用例输出
-├── tests/              # pytest 单元测试
-├── check_env.py        # 环境检查脚本
-├── requirements.txt
-└── README.md
+├── cli.py                     # 命令行入口（Click：scan / run / report，薄入口层）
+├── ui/app.py                  # Web 入口（Streamlit 薄 UI：只调资产，不写业务）
+├── check_env.py               # 环境自检
+├── src/agent/                 # 全部实现（平铺 + 裸 import：from dayXX_yyy import ...）
+│   ├── day29–day33 系列       # 五专项：需求→用例 / 接口→代码 / Bug 分析 / 造数 / 回归+报告
+│   ├── day34_flow_map.py      # 蓝图与盘点（9 段 StageSpec + 五态 ScanStatus）
+│   ├── day34_orchestrator.py  # 执行器 run_flow（断点续跑 / 指纹 / 失败隔离）
+│   ├── day35_scenario.py      # 场景工厂 build_blueprint / scan_blueprint / select_stages
+│   ├── day35_review_gate.py   # 两段式评审门
+│   └── utils.py               # 公共工具（日志 / 文本 / ROOT）
+├── tests/                     # pytest（全部零 API）
+├── docs/                      # 资产：requirements / apis / schemas / bugs / cases
+├── outputs/                   # 产物：flow 报告 / JUnit / 生成的套件
+├── archive/                   # 历史练习（week1..week5，不参与测试收集）
+└── pyproject.toml             # pyright(extraPaths + venvPath/venv) + pytest(pythonpath / testpaths)
 ```
+
+## 测试
+
+```bash
+.venv\Scripts\python.exe -m pytest -q        # 全绿：51 passed（约 11–13 秒，其中两个 UI AppTest 文件占 ≈10 秒）
+.venv\Scripts\python.exe -m pytest -v        # 看每条用例名
+```
+
+- **覆盖**：蓝图工厂（9 段 / 档位 8 段 / 对象新鲜性）、盘点五态、依赖闭包（顺序守恒 / 拓扑序 / 边界）、
+  蓝图契约（输出唯一性 / 路径规范化）、CLI 参数与零 API 路径、
+  UI 渲染（Streamlit `AppTest`）、UI 选段（选项 = 精确 `stage_id` / 空选 = 全流程 / S8 闭包预览 / 换档位清空选择）。
+- **纪律**：套件内所有测试**零 API**（不调模型、不起真实 mock 服务）；真跑留人工验收。
+- `testpaths = ["tests"]`：`archive/`、`src/`、`outputs/` 下的历史脚本**不再**被 pytest 误收集。
+
+## 文档索引
+
+| 文档 | 内容 |
+|---|---|
+| `HANDOFF.md` | 会话交接：当前阶段、分界线与已知约定 |
+| `docs/architecture.md` | 架构与目录（第 1 周版本，待续写） |
+| `docs/dayXX_notes.md` | 每日笔记（Day 8 – Day 39） |
+
+## 已知局限
+
+- `register` 场景缺 `docs/schemas/register.json` 与 `docs/bugs/register_bugs.md`
+  → 盘点时 S5 / S9 报 `missing_input`（缺资产就该说缺，不是 bug）。
+- S2 评审门是**人工段**，盘点永远 `manual_pending`（设计如此）。
+- UI 的选段只接受**精确 `stage_id`**（多选框给的就是精确 id）；`S4` 这种"唯一前缀"只有 CLI `--stage` 支持
+  —— UI **不做前缀猜谜**（见决策 J），这是刻意的不对称，不是缺功能。
+- 执行层暂无 `skipped_missing_input` 态：输入缺失的 code 段会真跑并 `run_failed`（已列入待办）。
+- `docs/` 多为演示样例数据，非生产资产。
+
+---
+*最后更新：2026-09-15（Day 39：测试 + 文档；UI 补选段）*
