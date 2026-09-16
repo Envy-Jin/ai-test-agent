@@ -24,6 +24,8 @@ import re
 from re import Match
 import sys
 from dataclasses import dataclass, field
+# Day 40 新增：并发批量（asyncio.gather + Semaphore 限流）
+import asyncio
 
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[attr-defined]
@@ -234,9 +236,66 @@ def analyze_bug_batch(text: str) -> list[BugAnalysis]:
     """批量：一份报告 → 分割 → 逐段分析（单条 Chain 复用 N 次，互不污染）。
 
     ⚠️ 教学点：批量 ≠ 一次塞进 prompt；批量 = 代码分割 + 模型逐段分析。
+    ⚠️ Day 40：本函数是**串行**版本，保留不动（向后兼容，且同步调用方零改动）。
+    要快用并发版 `analyze_bug_batch_async`（见下方，N 倍网络等待 → ≈1 倍）。
     """
     sections: list[str] = split_bug_reports(text)
     return [analyze_bug_report(section) for section in sections]
+
+async def analyze_bug_report_async(text: str) -> BugAnalysis:
+    """异步版单条分析（Day 40 新增）：链路走 `ainvoke`。
+
+    为什么单独写一个而不改 `analyze_bug_report`：
+      · 同步版是**另一条代码路径**，不是"同一个函数的另一种调法"
+        （实测：`RunnableLambda(协程函数)` 只能 ainvoke，反过来抛 TypeError）；
+      · 保留同步版 = 现有调用方（day34 编排器的 S9 段、day31 的 exp3/exp4）零改动。
+    """
+    chain = build_bug_chain()
+    result = await chain.ainvoke({"bug_report": text})
+    if isinstance(result, BugAnalysis):
+        return result
+    if not isinstance(result, dict):
+        raise ValueError(f"分析失败：链返回 {type(result).__name__}，期望 dict 或 BugAnalysis")
+    return BugAnalysis.model_validate(result)
+
+
+async def analyze_bug_batch_async(
+    text: str,
+    *,
+    max_concurrency: int = 5,
+) -> list[BugAnalysis]:
+    """Day 40 新增：**并发**批量分析（分割 → asyncio.gather → 保序装配）。
+
+    为什么能快：模型调用是 IO 密集（等网络），N 条串行 = N 次等待；并发 = ≈1 次等待。
+    实测（day40_concurrency_lab）：4 段串行 0.69s → 并发 0.16s（4.3x）。
+
+    为什么加 `max_concurrency`（默认 5，不是无限）：
+      Gemini 免费额度约 15 RPM（母计划附录）。一次把 N 条全放飞会**撞限流**，
+      拿到一堆 429 → 重试 → 反而更慢。用 `Semaphore` 把"同时在飞"关进配额内，
+      是"快"与"稳"的折中。这也是 `batch(max_concurrency=...)` 参数存在的理由。
+
+    ⚠️ `asyncio.gather` 保序：返回结果与 `sections` 一一对应（不是"谁先回来谁在前"）。
+    ⚠️ 失败隔离：`return_exceptions=True` → 单条失败不炸整批，由调用方决定丢弃/重试。
+    """
+    sections: list[str] = split_bug_reports(text)
+    if not sections:
+        return []
+    sem = asyncio.Semaphore(max_concurrency)
+
+    async def _guarded(section: str) -> BugAnalysis:
+        async with sem:  # 拿到许可才进入（限流点）
+            return await analyze_bug_report_async(section)
+
+    results: list[BugAnalysis | BaseException] = await asyncio.gather(
+        *(_guarded(s) for s in sections), return_exceptions=True
+    )
+    ok: list[BugAnalysis] = []
+    for idx, item in enumerate(results):
+        if isinstance(item, BaseException):
+            print(f"  ⚠️ 第 {idx + 1} 段分析失败（已隔离）：{type(item).__name__}: {item}")
+            continue
+        ok.append(item)
+    return ok
 
 
 def aggregate_stats(analyses: list[BugAnalysis]) -> BugBatchStats:

@@ -148,5 +148,46 @@ def report(name: str) -> None:
     click.echo(read_text(str(target)))
 
 
+@cli.group(name="cache")
+def cache_group() -> None:
+    """管理 LLM 调用缓存（Day 40：同 prompt 不重复花钱）。"""
+
+
+@cache_group.command(name="stats")
+def cache_stats() -> None:
+    """查看缓存现状：条目数 + 数据库大小（零 API）。"""
+    from day40_llm_cache import CACHE_PATH, CACHE_REL
+
+    if not CACHE_PATH.is_file():
+        click.echo(f"缓存不存在：{CACHE_REL}（首次调用模型后自动创建）")
+        return
+    cache = _open_cache()
+    total: int = cache.count()
+    size_kb: float = CACHE_PATH.stat().st_size / 1024
+    click.echo(f"缓存文件: {CACHE_REL}")
+    click.echo(f"条目数  : {total}")
+    click.echo(f"大小    : {size_kb:.1f} KB")
+
+
+@cache_group.command(name="clear")
+@click.confirmation_option(prompt="确定清空 LLM 缓存？")
+def cache_clear() -> None:
+    """清空缓存（清完下次调用会重新出网）。"""
+    cache = _open_cache()
+    cache.clear()
+    click.echo("✅ 缓存已清空")
+
+
+def _open_cache():
+    """打开缓存实例（延迟导入：cache 子命令之外零代价）。
+
+    ⚠️ 不写返回注解：SQLiteLLMCache 在函数体内导入（与本文件既有风格一致，见
+       `_pick_scenario` 的说明——避免为注解把资产提到模块顶层）。
+    """
+    from day40_llm_cache import SQLiteLLMCache
+
+    return SQLiteLLMCache()
+
+
 if __name__ == "__main__":
     cli()
