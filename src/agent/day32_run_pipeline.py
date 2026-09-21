@@ -79,15 +79,34 @@ def _read_text(path: str) -> str:
 
 
 
-def exp6_pipeline() -> None:
-    """端到端：双输入殊途同归——users.md（模型）+ orders.json（代码）→ 同一生成引擎 → 全产物落盘。"""
+def exp6_pipeline(
+    schema_files: list[str] | None = None,
+    subdir: str = "",
+) -> None:
+    """端到端：多输入殊途同归 → 同一生成引擎 → 全产物落盘。
+
+    Day 41 参数化（原来把 users.md + orders.json **写死在循环里**，第二个场景
+    根本没法用它 —— 蓝图工厂把 outputs 参数化了、cmd 却还指向登录的资产，
+    这正是「半参数化」最隐蔽的后果：产物路径对了、内容却是另一个场景的）：
+
+      schema_files=None → `["users.md", "orders.json"]`（= 原行为，Day 34 的
+                          `exp6_pipeline()` 一字不改也照跑 → 向后兼容）
+      subdir            → 产物子目录（场景命名空间）；"" = outputs/data_gen 根
+    """
     print("=" * 60)
-    print("实验：exp6_pipeline —— 双输入端到端闭环")
+    print("实验：exp6_pipeline —— 端到端闭环")
     out: str = _out_dir()
+    if subdir:
+        out = os.path.join(out, subdir)
+        os.makedirs(out, exist_ok=True)  # ⚠️ save_json 不会建父目录，子目录必须自己建
+    print(f"  产物目录: outputs/data_gen/{subdir}" if subdir else "  产物目录: outputs/data_gen")
     report_lines: list[str] = ["# Day 32 测试数据生成报告", ""]
 
-    for name, path in [("users", _schema_path("users.md")), ("orders", _schema_path("orders.json"))]:
-        print(f"  ── 输入: {os.path.basename(path)} ──")
+    files: list[str] = ["users.md", "orders.json"] if schema_files is None else list(schema_files)
+    for filename in files:
+        name: str = os.path.splitext(filename)[0]
+        path: str = _schema_path(filename)
+        print(f"  ── 输入: {filename} ──")
         schema: DataSchema | None = load_schema(path)
         if schema is None:
             print(f"  ❌ {name} 加载失败，跳过")
@@ -111,16 +130,16 @@ def exp6_pipeline() -> None:
         save_json(os.path.join(out, f"{name}_abnormal.json"), abnormal)
         save_text(os.path.join(out, f"{name}_insert.sql"), render_sql_inserts(schema, normal))
         save_text(os.path.join(out, f"{name}_mock.json"), render_mock_json(schema, normal))
-        print(f"  ✅ 已落盘 outputs/data_gen/{name}_*.json/.sql")
+        print(f"  ✅ 已落盘 outputs/data_gen/{subdir + '/' if subdir else ''}{name}_*.json/.sql")
         # 报告追加
-        report_lines.append(f"## {name}（{os.path.basename(path)}）")
+        report_lines.append(f"## {name}（{filename}）")
         report_lines.append(f"- 字段数：{len(schema.fields)} | 正常 {len(normal)} | 边界 {len(boundary)} | 异常 {len(abnormal)}")
         report_lines.append(f"- 质检：{'⚠️ ' + str([i.message for i in v_report.issues]) if v_report.issues else '✅ 无问题'}")
         report_lines.append("")
 
     save_text(os.path.join(out, "generation_report.md"), "\n".join(report_lines))
-    print(f"  ✅ 生成报告落盘: outputs/data_gen/generation_report.md")
-    print(f"  ── 双输入殊途同归：users.md（模型解析）与 orders.json（代码解析）都产出同一结构 DataSchema，生成引擎完全复用")
+    print(f"  ✅ 生成报告落盘: outputs/data_gen/{subdir + '/' if subdir else ''}generation_report.md")
+    print(f"  ── 双路径殊途同归：文档（模型解析）与 .json（代码解析）都产出同一结构 DataSchema，生成引擎完全复用")
 
 
 def exp7_model_vs_code(schema_path: str | None = None) -> None:

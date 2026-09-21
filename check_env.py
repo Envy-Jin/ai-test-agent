@@ -1,5 +1,6 @@
 """环境检查脚本：验证 Python 运行环境与项目依赖是否就绪。"""
 
+import io
 import os
 import sys
 from pathlib import Path
@@ -8,7 +9,9 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 
 
 def _configure_stdout() -> None:
-    if hasattr(sys.stdout, "reconfigure"):
+    # sys.stdout 静态类型是 TextIO，reconfigure 只在 TextIOWrapper 上；
+    # hasattr 不能用于类型收窄 → 必须 isinstance
+    if isinstance(sys.stdout, io.TextIOWrapper):
         try:
             sys.stdout.reconfigure(encoding="utf-8")
         except (OSError, ValueError):

@@ -1,0 +1,35 @@
+[
+    {
+      "case_id": "TC001",
+      "title": "正常注册返回 user_id",
+      "module": "register",
+      "method": "POST",
+      "path": "/api/register",
+      "test_type": "功能",
+      "priority": "P0",
+      "pytest_ids": ["outputs/generated_tests/register/test_api_suite.py::TestApiRegister::test_normal"]
+    },
+    {
+      "case_id": "TC002",
+      "title": "注册缺少必填参数",
+      "module": "register",
+      "method": "POST",
+      "path": "/api/register",
+      "test_type": "参数缺失",
+      "priority": "P1",
+      "pytest_ids": [
+        "outputs/generated_tests/register/test_api_suite.py::TestApiRegister::test_missing_params[payload0]",
+        "outputs/generated_tests/register/test_api_suite.py::TestApiRegister::test_missing_params[payload1]"
+      ]
+    },
+    {
+      "case_id": "TC003",
+      "title": "验证码错误注册被拒（401）",
+      "module": "register",
+      "method": "POST",
+      "path": "/api/register",
+      "test_type": "错误凭据",
+      "priority": "P0",
+      "pytest_ids": ["outputs/generated_tests/register/test_api_suite.py::TestApiRegister::test_invalid_credentials"]
+    }
+  ]

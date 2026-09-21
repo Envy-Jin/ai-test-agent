@@ -1,6 +1,6 @@
 {
     "title": "注册服务接口",
-    "base_url": "http://127.0.0.1:8766",
+    "base_url": "http://127.0.0.1:8767",
     "endpoints": [
       {
         "name": "用户注册",

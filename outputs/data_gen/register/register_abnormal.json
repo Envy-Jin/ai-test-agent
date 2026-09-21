@@ -1,0 +1,306 @@
+[
+  {
+    "id": 1,
+    "phone": "",
+    "code": 100000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": null,
+    "code": 100000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "!@#$%^&*()_+{}[]|\\:;\"'<>,.?/",
+    "code": 100000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "' OR '1'='1",
+    "code": 100000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "'; DROP TABLE users; --",
+    "code": 100000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "<script>alert(1)</script>",
+    "code": 100000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "<img src=x onerror=alert(1)>",
+    "code": 100000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "aaaaaaaaaaaa",
+    "code": 100000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 1000000000000000000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 1000000000000000000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 1000000000000000000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 1000000000000000000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 1000000000000000000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 1000000000000000000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 1000000000000000000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": null,
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "!@#$%^&*()_+{}[]|\\:;\"'<>,.?/",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "' OR '1'='1",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "'; DROP TABLE users; --",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "<script>alert(1)</script>",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "<img src=x onerror=alert(1)>",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "密码0",
+    "username": "",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "密码0",
+    "username": null,
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "密码0",
+    "username": "!@#$%^&*()_+{}[]|\\:;\"'<>,.?/",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "密码0",
+    "username": "' OR '1'='1",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "密码0",
+    "username": "'; DROP TABLE users; --",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "密码0",
+    "username": "<script>alert(1)</script>",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "密码0",
+    "username": "<img src=x onerror=alert(1)>",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "密码0",
+    "username": "aaaaaaaaaaaaaaaaaaaaa",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": ""
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": null
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "!@#$%^&*()_+{}[]|\\:;\"'<>,.?/"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "' OR '1'='1"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "'; DROP TABLE users; --"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "<script>alert(1)</script>"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "<img src=x onerror=alert(1)>"
+  }
+]

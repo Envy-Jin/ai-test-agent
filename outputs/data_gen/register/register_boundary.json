@@ -1,0 +1,130 @@
+[
+  {
+    "id": 1,
+    "phone": "",
+    "code": 100000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "130000000000",
+    "code": 100000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 999999,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 99999,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 1000000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "密码0a",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "密码0",
+    "username": "",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "密码0",
+    "username": "user_000a",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "待激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "已激活"
+  },
+  {
+    "id": 1,
+    "phone": "13000000000",
+    "code": 100000,
+    "password": "密码0",
+    "username": "user_000",
+    "status": "已锁定"
+  }
+]

@@ -1,0 +1,16 @@
+{
+    "table_name": "register",
+    "description": "用户注册表，用于注册场景的测试数据生成",
+    "fields": [
+      {"name": "id", "field_type": "int", "required": true, "description": "自增主键", "primary_key": true},
+      {"name": "phone", "field_type": "phone", "required": true, "description": "手机号",
+       "pattern": "^1[3-9]\\d{9}$", "max_length": 11},
+      {"name": "code", "field_type": "int", "required": true, "description": "短信验证码",
+       "min_value": 100000, "max_value": 999999},
+      {"name": "password", "field_type": "str", "required": true, "description": "密码", "max_length": 64},
+      {"name": "username", "field_type": "username", "required": true, "description": "用户名",
+       "pattern": "^[A-Za-z0-9_]+$", "max_length": 20},
+      {"name": "status", "field_type": "enum", "required": true, "description": "账号状态",
+       "enum_values": ["待激活", "已激活", "已锁定"]}
+    ]
+  }

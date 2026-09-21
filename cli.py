@@ -38,15 +38,18 @@ def _pick_scenario(name: str, *, bug_probe: bool):
 
     ⚠️ 不写返回注解：ScenarioConfig 在命令体内才导入；留空由 pyright 推断
        （项目规范：构建函数返回注解留空，避免复制契约漂移）。
+    
+    Day 41：场景注册表改从 `day35_scenario.SCENARIO_REGISTRY` 读（单一来源），
+    入口层不再自己维护一份字典 —— 加场景只改资产层一处。
     """
-    from day35_scenario import LOGIN_SCENARIO, REGISTER_SCENARIO
+    from day35_scenario import SCENARIO_REGISTRY
 
-    registry = {LOGIN_SCENARIO.name: LOGIN_SCENARIO, REGISTER_SCENARIO.name: REGISTER_SCENARIO}
-    chosen = registry.get(name)
+    chosen = SCENARIO_REGISTRY.get(name)
     if chosen is None:
-        raise click.BadParameter(f"未知场景 {name!r}，可选：{', '.join(sorted(registry))}")
+        raise click.BadParameter(
+            f"未知场景 {name!r}，可选：{', '.join(sorted(SCENARIO_REGISTRY))}"
+        )
     return chosen.model_copy(update={"bug_probe": bug_probe})
-
 
 def resolve_stage_ids(tokens: set[str], known: set[str]) -> set[str]:
     """把用户输入的阶段标识归一化为精确 stage_id（支持唯一前缀：S4 → S4_test_codegen）。
@@ -86,8 +89,8 @@ def cli() -> None:
 @click.option("--scenario", default="login", show_default=True, help="被测场景（login/register）")
 @click.option("--no-bug-probe", is_flag=True, help="关闭 S7 变异自验证档位（蓝图 9→8 段）")
 def scan(scenario: str, no_bug_probe: bool) -> None:
-    """盘点蓝图（零 API）：打印每个阶段的状态与原因。"""
-    from day35_scenario import build_blueprint, scan_blueprint
+    """盘点蓝图（零 API）：打印每个阶段的状态与原因 + 场景契约校验。"""
+    from day35_scenario import build_blueprint, find_scenario_contract_violations, scan_blueprint
 
     sc = _pick_scenario(scenario, bug_probe=not no_bug_probe)
     blueprint = build_blueprint(sc)
@@ -99,6 +102,14 @@ def scan(scenario: str, no_bug_probe: bool) -> None:
     for _, status, _ in rows:
         counts[status] = counts.get(status, 0) + 1
     click.echo("汇总: " + "、".join(f"{k}={v}" for k, v in sorted(counts.items())))
+    # Day 41：盘点顺手报契约违规 —— 「能不能跑」和「跑得对不对」是两件事
+    violations = find_scenario_contract_violations(sc)
+    if violations:
+        click.echo("契约校验: ✗ 有违规（先修再跑，否则会绿着错）")
+        for item in violations:
+            click.echo(f"  ✗ {item}")
+    else:
+        click.echo("契约校验: ✅ 通过（端口同源 / S5 点名本场景 schema / 靶场同源）")
 
 
 @cli.command(name="run")
@@ -108,11 +119,15 @@ def scan(scenario: str, no_bug_probe: bool) -> None:
 @click.option("--force", is_flag=True, help="忽略既有产物，全部重跑")
 @click.option("--fail-fast", is_flag=True, help="遇 run_failed 立即中断整链")
 @click.option("--stage", "stage_ids", default="", help="只跑指定阶段（逗号分隔，如 S4,S8；支持唯一前缀）；依赖上游自动补齐")
+@click.option("--no-cache", is_flag=True, help="关闭 LLM 缓存（量冷启动真实耗时 / 排查结果串味时用）")
 def run_cmd(scenario: str, no_bug_probe: bool, with_llm: bool,
-            force: bool, fail_fast: bool, stage_ids: str) -> None:
-    """执行全流程（或 --stage 子集）：code 段本地跑，llm 段需 --with-llm。"""
-    from day34_orchestrator import run_flow
-    from day35_scenario import build_blueprint, select_stages
+            force: bool, fail_fast: bool, stage_ids: str, no_cache: bool) -> None:
+    """执行全流程（或 --stage 子集）：code 段本地跑，llm 段需 --with-llm。
+
+    Day 41：llm 段的模型调用默认**带缓存**（同 prompt 第二次不出网）；  
+    跑完把 flow_report 落到场景自己的目录（原来命令行跑完什么都不留）。"""
+    from day34_orchestrator import persist_flow_report, run_flow
+    from day35_scenario import build_blueprint, output_namespace, select_stages
 
     sc = _pick_scenario(scenario, bug_probe=not no_bug_probe)
     blueprint = build_blueprint(sc)
@@ -124,7 +139,11 @@ def run_cmd(scenario: str, no_bug_probe: bool, with_llm: bool,
         blueprint = select_stages(blueprint, wanted)
         click.echo(f"子集执行：{len(blueprint)} 段（已自动补齐依赖上游）")
 
-    flow_report = run_flow(blueprint=blueprint, with_llm=with_llm, force=force, fail_fast=fail_fast)
+    flow_report = run_flow(
+        blueprint=blueprint, with_llm=with_llm, force=force,
+        fail_fast=fail_fast, use_cache=not no_cache,
+    )
+    json_path, md_path = persist_flow_report(flow_report, output_namespace(sc))
     click.echo(f"\n执行完成 · 开始时间 {flow_report.started_at} · {flow_report.note}")
     for record in flow_report.stages:
         click.echo(f"  {record.stage_id:<22} {record.status:<18} {record.duration_s:>6.2f}s")
@@ -132,19 +151,29 @@ def run_cmd(scenario: str, no_bug_probe: bool, with_llm: bool,
     for record in flow_report.stages:
         counts[record.status] = counts.get(record.status, 0) + 1
     click.echo("汇总: " + "、".join(f"{k}={v}" for k, v in sorted(counts.items())))
+    click.echo(f"审计记录: {md_path}")
 
 
 @cli.command()
 @click.option("--name", default="flow_report.md", show_default=True, help="outputs/flow 下的报告文件名")
-def report(name: str) -> None:
+@click.option("--scenario", default="login", show_default=True, help="场景（决定 outputs/flow 下的子目录）")
+def report(name: str, scenario: str) -> None:
     """打印 outputs/flow 下的报告（默认 flow_report.md）。"""
+    from day35_scenario import SCENARIO_REGISTRY, output_namespace
     from utils import ROOT, read_text
 
-    flow_dir: Path = Path(ROOT) / _FLOW_REL
+    chosen = SCENARIO_REGISTRY.get(scenario)
+    if chosen is None:
+        raise click.BadParameter(
+            f"未知场景 {scenario!r}，可选：{', '.join(sorted(SCENARIO_REGISTRY))}"
+        )
+    ns: str = output_namespace(chosen)
+    flow_dir: Path = (Path(ROOT) / _FLOW_REL / ns) if ns else (Path(ROOT) / _FLOW_REL)
     target: Path = flow_dir / name
     if not target.is_file():
         available: str = ", ".join(sorted(p.name for p in flow_dir.glob("*.md"))) or "（空）"
-        raise click.BadParameter(f"{_FLOW_REL}/{name} 不存在；可选：{available}")
+        shown: str = f"{_FLOW_REL}/{ns + '/' if ns else ''}{name}"
+        raise click.BadParameter(f"{shown} 不存在；可选：{available}")
     click.echo(read_text(str(target)))
 
 

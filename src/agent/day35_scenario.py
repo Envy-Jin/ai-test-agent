@@ -29,8 +29,12 @@
 
 from __future__ import annotations
 
+import json
 import os
+import re
 import sys
+from collections.abc import Sequence
+from urllib.parse import urlparse
 
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[attr-defined]
@@ -45,7 +49,7 @@ from day34_flow_map import (  # noqa: E402
     _abs,
     _exists_nonempty,
 )
-from day35_common import ROOT, output_dir, write_text  # noqa: E402  # 抽好的公共底座（练习 1 复用）
+from day35_common import ROOT, output_dir, read_text, write_text  # noqa: E402  # 抽好的公共底座（练习 1 复用）
 
 
 # ═══════════════════════════════════════════════════════
@@ -69,6 +73,10 @@ class ScenarioConfig(BaseModel):
     bug_doc: str
     mock_port: int
     bug_probe: bool = True                       # 执行档位：S7 变异自验证（默认开）
+    # Day 41 新增：接口用例注册表（S8 缺陷反查用）。
+    # 为什么要有它：反查靠 node id（含**产物路径**），而产物路径现在带场景命名空间了
+    #   → 注册表必须同源，否则反查全落空（报告里"模块"列一片 `?`)。
+    case_registry: str = "docs/cases/api_registry.json"
 
 
 LOGIN_SCENARIO = ScenarioConfig(
@@ -91,8 +99,59 @@ REGISTER_SCENARIO = ScenarioConfig(
     schema_docs=["docs/schemas/register.json"],   # 缺 → S5 missing_input（教学点）
     bug_doc="docs/bugs/register_bugs.md",         # 缺 → S9 missing_input（教学点）
     mock_port=8767,
+    case_registry="docs/cases/api_registry_register.json",
 )
 
+# 场景注册表单一来源（Day 41：从 cli.py 的局部字典提上来的——入口层只查表，不自己维护）
+SCENARIO_REGISTRY: dict[str, ScenarioConfig] = {
+    LOGIN_SCENARIO.name: LOGIN_SCENARIO,
+    REGISTER_SCENARIO.name: REGISTER_SCENARIO,
+}
+
+
+# ═══════════════════════════════════════════════════════
+# Day 41：场景命名空间 + 资产驱动的段性质（第二个场景逼出来的两件事）
+# ═══════════════════════════════════════════════════════
+# 兼容层：login 的产物路径已被 api_registry / README / 测试 / Day39 截图引用，
+# Day 34-40 全部建立在「平铺 outputs/」之上 → 保持原样不动；**新场景**一律走
+# `outputs/<子目录>/` 命名空间。
+# ⚠️ 这是**有意的**兼容层，不是遗忘：一次性迁移 login 的改动面（资产+文档+测试+
+#    截图）远大于收益。收口条件写进 docs/day41_notes.md，等第二场景稳定后统一迁移。
+LEGACY_FLAT_SCENARIO: str = "login"
+
+# 输入扩展名 → 解析路径（沿用 Day 29/30/32 的分界线：文档走模型，机器可读走代码）
+_MODEL_EXTS: frozenset[str] = frozenset({".md", ".txt", ".docx"})
+
+
+def _ext_of(doc_rel: str) -> str:
+    """输入文件的扩展名（小写，含点）。"""
+    return os.path.splitext(doc_rel)[1].lower()
+
+
+def kind_for_docs(docs: Sequence[str]) -> StageKind:
+    """按输入扩展名派生段的性质：含文档 → llm（要模型）；其余 → code。
+
+    Day 34 把 kind 当成「段固有属性」——只有一个 login 场景时看不出问题。
+    Day 41 上第二个场景就暴露了它其实是**资产驱动**的：
+      同一个 S3_api_plan：输入登录的 .md → 走模型（llm）；
+                          输入注册的 .json → 代码直读（code），根本不需要 API。
+    声明错了不会报错，只会"静默地多等/少做"：
+      · 明明走代码却声明 llm → 盘点成 needs_api，白等一个 --with-llm；
+      · 明明要模型却声明 code → 执行器「自动跑」时静默调模型（更危险）。
+    """
+    if any(_ext_of(doc) in _MODEL_EXTS for doc in docs):
+        return "llm"
+    return "code"
+
+
+def output_namespace(sc: ScenarioConfig) -> str:
+    """场景产物子目录名：login → ""（兼容层，保持平铺）；其他场景 → 场景名。"""
+    return "" if sc.name == LEGACY_FLAT_SCENARIO else sc.name
+
+
+def _ns_prefix(ns: str) -> str:
+    """命名空间前缀："" → ""；"register" → "register/"。"""
+    return f"{ns}/" if ns else ""
 
 # ═══════════════════════════════════════════════════════
 # 蓝图工厂（练习 2：把 Day 34 写死的 9 段 StageSpec 模板化成 f-string）
@@ -102,7 +161,13 @@ def build_blueprint(sc: ScenarioConfig) -> list[StageSpec]:
 
     ⚠️ 为什么用结构化构造而不是字符串模板：StageSpec 字段有 Literal 类型约束，
        pyright 在构建期就能抓住 kind/runner 拼错；字符串模板要到运行期才炸。
+    Day 41 三处变化（全部由"跑第二个场景"逼出来）：
+      ① 产物加场景命名空间 `outputs/<子目录>/…`（login 是兼容层，见 output_namespace）
+      ② 段的 kind 改由**资产扩展名**派生（kind_for_docs），不再写死
+      ③ S5 的 cmd 点名本场景的 schema 文件（原来写死 users/orders）
     """
+    ns: str = output_namespace(sc)
+    ns_prefix: str = _ns_prefix(ns)
     plan_json: str = f"outputs/api_test_plan_{sc.name}.json"
     plan_md: str = f"outputs/api_test_plan_{sc.name}.md"
     req_json: str = f"outputs/requirement_{sc.name}_analysis.json"
@@ -110,19 +175,27 @@ def build_blueprint(sc: ScenarioConfig) -> list[StageSpec]:
     bug_json: str = f"outputs/bug_{sc.name}_analysis.json"
     bug_md: str = f"outputs/bug_{sc.name}_analysis.md"
     bug_batch: str = f"outputs/bug_{sc.name}_batch_report.md"
-    conftest: str = "outputs/generated_tests/conftest.py"
-    suite: str = "outputs/generated_tests/test_api_suite.py"
-    junit_n: str = "outputs/flow/junit_normal.xml"
-    junit_b: str = "outputs/flow/junit_bug.xml"
-    report_n: str = "outputs/flow/exec_report_normal.md"
-    report_b: str = "outputs/flow/exec_report_bug.md"
-
+    conftest: str = f"outputs/generated_tests/{ns_prefix}conftest.py"
+    suite: str = f"outputs/generated_tests/{ns_prefix}test_api_suite.py"
+    junit_n: str = f"outputs/flow/{ns_prefix}junit_normal.xml"
+    junit_b: str = f"outputs/flow/{ns_prefix}junit_bug.xml"
+    report_n: str = f"outputs/flow/{ns_prefix}exec_report_normal.md"
+    report_b: str = f"outputs/flow/{ns_prefix}exec_report_bug.md"
+    # S5：数据模型文件名 + 产物名都从 sc.schema_docs 派生（Day 41 修掉写死的 users/orders）
+    schema_files: list[str] = [os.path.basename(p) for p in sc.schema_docs]
+    s5_outputs: list[str] = [
+        f"outputs/data_gen/{ns_prefix}{os.path.splitext(f)[0]}_normal.json"
+        for f in schema_files
+    ]
+    # S4 的生成目录（子进程 cwd = src/agent，所以是 ../../ 相对路径）
+    gen_out_dir: str = f"../../outputs/generated_tests/{ns}" if ns else "../../outputs/generated_tests"
+    
     stages: list[StageSpec] = [
         StageSpec(
             stage_id="S1_requirement_cases",
             title="需求解析 → 分级用例",
             source="day29",
-            kind="llm",
+            kind=kind_for_docs([sc.requirement_doc]),
             inputs=[sc.requirement_doc],
             outputs=[req_json, req_md],
             cmd=f"from day29_requirement_analysis import exp2_analyze_file; "
@@ -142,12 +215,12 @@ def build_blueprint(sc: ScenarioConfig) -> list[StageSpec]:
             stage_id="S3_api_plan",
             title="接口文档 → 接口测试计划",
             source="day30",
-            kind="llm",
+            kind=kind_for_docs([sc.api_doc]),
             inputs=[sc.api_doc],
             outputs=[plan_json, plan_md],
             cmd=f"from day30_api_schema import exp2_analyze_file; "
                 f"exp2_analyze_file('../../{sc.api_doc}', '{sc.name}')",
-            note=f"真 API：文档 → ApiDoc（.md 走模型 / .json 走代码直读）→ 三件套计划 → 落盘",
+            note=f"文档 → ApiDoc（.md 走模型 / .json 走代码直读）→ 三件套计划 → 落盘",
         ),
         StageSpec(
             stage_id="S4_test_codegen",
@@ -158,17 +231,18 @@ def build_blueprint(sc: ScenarioConfig) -> list[StageSpec]:
             inputs=[plan_json],
             outputs=[conftest, suite],
             cmd=f"from day30_pytest_generator import generate_api_tests_from_plan; "
-                f"print(generate_api_tests_from_plan('../../{plan_json}', '../../outputs/generated_tests'))",
+                f"print(generate_api_tests_from_plan('../../{plan_json}', '{gen_out_dir}'))",
             note="确定性段：同输入同输出（练习 3 --force 重跑验证指纹不变）",
         ),
         StageSpec(
             stage_id="S5_test_data",
             title="字段规则 → 测试数据",
             source="day32",
-            kind="llm",
-            inputs=sc.schema_docs,
-            outputs=["outputs/data_gen/users_normal.json", "outputs/data_gen/orders_normal.json"],
-            cmd="from day32_run_pipeline import exp6_pipeline; exp6_pipeline()",
+            kind=kind_for_docs(sc.schema_docs),
+            inputs=list(sc.schema_docs),
+            outputs=s5_outputs,
+            cmd="from day32_run_pipeline import exp6_pipeline; "
+                f"exp6_pipeline({schema_files!r}, {ns!r})",
             note="双输入分派：.md 走模型解析、.json 走代码直读（确定性段内置）",
         ),
         StageSpec(
@@ -178,6 +252,8 @@ def build_blueprint(sc: ScenarioConfig) -> list[StageSpec]:
             kind="code",
             runner="mock_pytest",
             mock_bug=False,
+            mock_port=sc.mock_port,
+            mock_scenario=sc.name,
             inputs=[suite],
             outputs=[junit_n],
             note=f"执行器内置：start_mock({sc.mock_port}, False) → pytest 生成套件 --junitxml → stop",
@@ -189,9 +265,11 @@ def build_blueprint(sc: ScenarioConfig) -> list[StageSpec]:
             kind="code",
             runner="mock_pytest",
             mock_bug=True,
+            mock_port=sc.mock_port,
+            mock_scenario=sc.name,
             inputs=[suite],
             outputs=[junit_b],
-            note=f"同一套用例只切 bug_mode=True → 抓「埋 Bug」缺陷（错误凭据 500 / 越权 200）",
+            note="同一套用例只切 bug_mode=True → 抓「埋 Bug」缺陷",
         ),
         StageSpec(
             stage_id="S8_exec_report",
@@ -199,9 +277,9 @@ def build_blueprint(sc: ScenarioConfig) -> list[StageSpec]:
             source="day33/综合",
             kind="code",
             runner="exec_report",
-            inputs=[junit_n, junit_b, "docs/cases/api_registry.json"],
+            inputs=[junit_n, junit_b, sc.case_registry],
             outputs=[report_n, report_b],
-            note="统计归代码（day33 summarize/find_defects）；node id → 注册表 TC 反查",
+            note="统计归代码（day33 summarize/find_defects）；node id → 本场景注册表 TC 反查",
         ),
         StageSpec(
             stage_id="S9_bug_analyze",
@@ -306,6 +384,86 @@ def find_blueprint_contract_violations(blueprint: list[StageSpec]) -> list[str]:
                 violations.append(f"{spec.stage_id}：路径未规范化 {path!r}（禁 ./ 前缀与反斜杠）")
     return violations
 
+# ═══════════════════════════════════════════════════════
+# Day 41：场景级契约（把端到端暴露的三类静默接缝变成可断言契约）
+# ═══════════════════════════════════════════════════════
+def declared_api_port(doc_rel: str) -> int | None:
+    """读接口文档里声明的服务端口（零 API）：.json 走 json.loads，.md/.txt 走正则。
+
+    为什么要它：S4 生成的 pytest 套件里 `BASE_URL` 抄的是**接口文档**的地址，
+    而 S6/S7 起的 mock 监听蓝图里的 `mock_port`。两者不同源 → 用例打到空气，
+    一片 404，而执行器把「有用例失败」判为合法结果（run_ok）→ **绿着错**。
+    """
+    path: str = os.path.join(ROOT, doc_rel)
+    if not os.path.isfile(path):
+        return None
+    text: str = read_text(path)
+    if _ext_of(doc_rel) == ".json":
+        data: object = json.loads(text)
+        if isinstance(data, dict):
+            value: object = data.get("base_url")
+            if isinstance(value, str):
+                return urlparse(value).port
+        return None
+    found = re.search(r"https?://[0-9A-Za-z._-]+:(\d+)", text)
+    return int(found.group(1)) if found is not None else None
+
+
+def find_scenario_contract_violations(sc: ScenarioConfig) -> list[str]:
+    """单场景契约自检 → 违规描述列表（空 = 合规）。纯函数：不改入参、不写文件。
+
+    检查两件事（都来自 Day 41 端到端真实暴露的接缝）：
+      ① 接口文档声明的端口 == 蓝图 mock_port（同源）；
+      ② S5 的 cmd 点名了**本场景的** schema 文件
+         （防「声明按场景造数、cmd 写死 users/orders」的半参数化回归）。
+    消费端 = tests/test_day41_e2e.py。
+    """
+    violations: list[str] = []
+    doc_port: int | None = declared_api_port(sc.api_doc)
+    if doc_port is None:
+        violations.append(f"{sc.name}：读不到 {sc.api_doc} 的 base_url，无法核对 mock 端口")
+    elif doc_port != sc.mock_port:
+        violations.append(
+            f"{sc.name}：接口文档端口 {doc_port} ≠ 蓝图 mock_port {sc.mock_port}（生成的套件会打空）"
+        )
+    schema_files: list[str] = [os.path.basename(p) for p in sc.schema_docs]
+    s5: StageSpec | None = next(
+        (s for s in build_blueprint(sc) if s.stage_id == "S5_test_data"), None
+    )
+    if s5 is not None and schema_files:
+        missing: list[str] = [f for f in schema_files if f not in s5.cmd]
+        if missing:
+            violations.append(
+                f"{sc.name}：S5 的 cmd 未点名本场景 schema（缺 {', '.join(missing)}）"
+            )
+    # ③ 执行段起的**靶场**必须是本场景的（端口同源只管"打得到"，场景同源才管"打对地方"）
+    for spec in build_blueprint(sc):
+        if spec.runner == "mock_pytest" and spec.mock_scenario != sc.name:
+            violations.append(
+                f"{sc.name}：{spec.stage_id} 的 mock_scenario={spec.mock_scenario!r} ≠ 场景名"
+                f" {sc.name!r} → mock 会实现另一套接口，用例全打 404"
+            )
+    return violations
+
+
+def find_scenario_collisions(scenarios: Sequence[ScenarioConfig]) -> list[str]:
+    """多个场景之间的**产物路径冲突** → 冲突描述列表（空 = 互不覆盖）。
+
+    为什么把它提升为契约：「后跑的静默覆盖先跑的」是端到端最难查的一类问题
+    ——状态列是绿的、报告也生成了，只是内容属于另一个场景。做法是路径层面
+    直接断言"两场景的输出路径集合互不相交"，比事后比对产物内容便宜得多。
+    """
+    declarers: dict[str, list[str]] = {}
+    for sc in scenarios:
+        for spec in build_blueprint(sc):
+            for out in spec.outputs:
+                declarers.setdefault(out, []).append(f"{sc.name}:{spec.stage_id}")
+    return [
+        f"{path}  ← " + " 与 ".join(who)
+        for path, who in sorted(declarers.items())
+        if len(who) > 1
+    ]    
+
 def _apply_bug_probe(stages: list[StageSpec], bug_probe: bool) -> list[StageSpec]:
     """执行档位过滤（Day 37，Day 39 修补）：bug_probe=False → 摘 S7 + S8 输入/输出双自适应。
 
@@ -346,7 +504,10 @@ def exp1_login_parity() -> int:
         print(f"  ❌ 蓝图段数不一致: {len(built)} != {len(BLUEPRINT)}")
         return len(built) - len(BLUEPRINT)
 
-    fields: tuple[str, ...] = ("stage_id", "kind", "runner", "inputs", "outputs", "mock_bug")
+    fields: tuple[str, ...] = (
+        "stage_id", "kind", "runner", "inputs", "outputs", "mock_bug",
+        "mock_port", "mock_scenario",
+    )
     print(f"  契约字段对比（{len(fields)} 项 × {len(built)} 段）：")
     for idx, (a, b) in enumerate(zip(built, BLUEPRINT, strict=True)):
         bad: list[str] = []

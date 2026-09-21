@@ -1,7 +1,7 @@
 # 全流程执行报告：login · 正常版（基线）
 
-**日期**: 2026-09-14 19:42
-**执行**: mock 靶场 + outputs/generated_tests（7 pytest node）
+**日期**: 2026-09-20 21:43
+**执行**: mock 靶场 + 生成套件（7 个 pytest node）
 
 ## 执行摘要
 - 用例总数: 7
@@ -16,11 +16,11 @@
 |------|------|------|---------|------|
 | passed | test_normal | login | 0.009 |  |
 | passed | test_missing_params[payload0] | login | 0.005 |  |
-| passed | test_missing_params[payload1] | login | 0.017 |  |
-| passed | test_invalid_credentials | login | 0.014 |  |
-| passed | test_normal | orders | 0.004 |  |
-| passed | test_unauthorized[headers0] | orders | 0.004 |  |
-| passed | test_unauthorized[headers1] | orders | 0.021 |  |
+| passed | test_missing_params[payload1] | login | 0.004 |  |
+| passed | test_invalid_credentials | login | 0.004 |  |
+| passed | test_normal | orders | 0.021 |  |
+| passed | test_unauthorized[headers0] | orders | 0.005 |  |
+| passed | test_unauthorized[headers1] | orders | 0.004 |  |
 
 ## 失败用例（疑似缺陷）
 - 无

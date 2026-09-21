@@ -47,11 +47,13 @@ import sqlite3
 import sys
 from pathlib import Path
 from typing import Any
+from contextlib import closing
 
 from langchain_core.caches import BaseCache, RETURN_VAL_TYPE
 from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
-from langchain_core.outputs import Generation
+from langchain_core.messages import AIMessage, AIMessageChunk
+from langchain_core.outputs import ChatGeneration, Generation
 
 if sys.platform == "win32":
     _stdout: Any = sys.stdout  # TextIO 静态类型缺 reconfigure → 经 Any 中转（禁 type: ignore）
@@ -65,6 +67,14 @@ _ROOT: Path = Path(_AGENT_DIR).parents[1]
 CACHE_REL: str = ".cache/llm_cache.db"
 CACHE_PATH: Path = _ROOT / ".cache" / "llm_cache.db"
 
+# 反序列化白名单：**必须从真实载荷推导**，不能从"我以为的类型"推导。
+#   LLM 路径载荷：[Generation]
+#   Chat 路径载荷：[ChatGeneration(message=AIMessage)]   ← 今天接线才走到的路径
+# Day 40 只放了 Generation → chat 模型一命中就抛
+#   ValueError: Deserialization of ('langchain','schema','messages','AIMessage') is not allowed
+# ⚠️ 注意 ChatGeneration 是 Generation 的**子类**，但白名单按"id 完全匹配"判定，
+#    父类放行 ≠ 子类放行 → 必须逐个列出。
+CACHE_ALLOWED_OBJECTS: list[type] = [Generation, ChatGeneration, AIMessage, AIMessageChunk]
 
 class SQLiteLLMCache(BaseCache):
     """把 LLM 调用结果落进 SQLite 的 BaseCache 实现（标准库，零新依赖）。
@@ -93,8 +103,33 @@ class SQLiteLLMCache(BaseCache):
         """
         return sqlite3.connect(self.db_path)
 
+    def _session(self) -> closing[sqlite3.Connection]:
+        """开一个**用完必关**的连接（Day 41 修复）。
+
+        ⚠️ 坑（Day 41 端到端冒烟时暴出来的）：原来写的是
+           `with self._connect() as conn:` —— 这在 sqlite3 里**根本不关连接**！
+           `Connection.__enter__/__exit__` 实现的是**事务**语义（提交/回滚），
+           不是关闭语义。所以：连接对象只在局部变量出作用域后才被引用计数回收，
+           而 `Connection` 与它派生的 `Cursor` 之间存在引用环 → **GC 不立刻回收**，
+           文件句柄就一直挂着。
+
+        实测症状：缓存操作做完后删临时目录报
+           PermissionError [WinError 32] 另一个程序正在使用此文件: 'probe.db'
+        —— 冒烟脚本的 `shutil.rmtree(..., ignore_errors=True)` 会**静默吞掉**这个错，
+        于是"清理干净了"是假的（残留目录真真切切躺在 %TEMP% 里）。
+
+        真实影响：一次链路要几十上百次模型调用 → 泄漏几十上百个连接/句柄；
+        进程活着时缓存库文件被锁（改名/删除/换库全失败）。
+
+        正确姿势二选一：`contextlib.closing(sqlite3.connect(...))`（本处采用，
+        零缩进改动），或自己 try/finally 里 `conn.close()`。
+        ⚠️ 事务语义不要丢：`closing()` 不提交，所以里面仍要保留 `with conn:` 的
+           `with self._session() as conn, conn:` 写法，或改用显式 `conn.commit()`。
+        """
+        return closing(self._connect())
+
     def _init_table(self) -> None:
-        with self._connect() as conn:
+        with self._session() as conn, conn:
             conn.execute(
                 "CREATE TABLE IF NOT EXISTS llm_cache ("
                 "  prompt TEXT NOT NULL,"
@@ -107,7 +142,7 @@ class SQLiteLLMCache(BaseCache):
     # ── BaseCache 契约三方法（同步；async 版由基类默认实现代理过来）──
     def lookup(self, prompt: str, llm_string: str) -> RETURN_VAL_TYPE | None:
         """命中 → 反序列化 Generation 列表；未命中 → None（基类约定）。"""
-        with self._connect() as conn:
+        with self._session() as conn, conn:
             row: tuple[str] | None = conn.execute(
                 "SELECT response FROM llm_cache WHERE prompt = ? AND llm_string = ?",
                 (prompt, llm_string),
@@ -119,8 +154,10 @@ class SQLiteLLMCache(BaseCache):
         # loads 返回 Any → 经 list[Generation] 收窄（项目规范：逐层 isinstance）
         # ⚠️ 显式给 allowed_objects：LangChain 已公告默认值将来会变（实测打
         #    LangChainPendingDeprecationWarning），且显式白名单本身就是安全实践
-        #    ——只允许反序列化 Generation，别的一律拒绝。
-        loaded: Any = loads(row[0], allowed_objects=[Generation])
+        #    ——只允许反序列化缓存真会装的几类对象，别的一律拒绝。
+        # Day 41 修复：白名单原来只有 Generation（= LLM 路径），chat 路径的载荷是
+        #    ChatGeneration(AIMessage) → 一接进生产链就 ValueError（真实载荷见上）。
+        loaded: Any = loads(row[0], allowed_objects=CACHE_ALLOWED_OBJECTS)
         if isinstance(loaded, list):
             return [g for g in loaded if isinstance(g, Generation)]
         return None
@@ -128,7 +165,7 @@ class SQLiteLLMCache(BaseCache):
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """写入（幂等）：同键直接覆盖。"""
         payload: str = dumps(list(return_val))
-        with self._connect() as conn:
+        with self._session() as conn, conn:
             conn.execute(
                 "INSERT OR REPLACE INTO llm_cache (prompt, llm_string, response) VALUES (?, ?, ?)",
                 (prompt, llm_string, payload),
@@ -136,7 +173,7 @@ class SQLiteLLMCache(BaseCache):
 
     def clear(self, **kwargs: Any) -> None:
         """清空（BaseCache.clear 签名带 **kwargs，保持一致好让基类调用）。"""
-        with self._connect() as conn:
+        with self._session() as conn, conn:
             conn.execute("DELETE FROM llm_cache")
         self.hits = 0
         self.misses = 0
@@ -144,7 +181,7 @@ class SQLiteLLMCache(BaseCache):
     # ── 教学辅助：命中率 / 条目数 ──
     def count(self) -> int:
         """当前缓存条目数（CLI `cache stats` 用）。"""
-        with self._connect() as conn:
+        with self._session() as conn, conn:
             row = conn.execute("SELECT COUNT(*) FROM llm_cache").fetchone()
         return int(row[0]) if row is not None else 0
 

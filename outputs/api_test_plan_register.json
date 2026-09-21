@@ -1,0 +1,38 @@
+{
+  "title": "注册服务接口",
+  "base_url": "http://127.0.0.1:8767",
+  "endpoints": [
+    {
+      "name": "用户注册",
+      "method": "POST",
+      "path": "/api/register",
+      "summary": "手机号 + 短信验证码注册新账号",
+      "params": [
+        {
+          "name": "phone",
+          "location": "body",
+          "required": true,
+          "param_type": "string",
+          "example": "13900139000",
+          "description": "11 位手机号"
+        },
+        {
+          "name": "code",
+          "location": "body",
+          "required": true,
+          "param_type": "string",
+          "example": "123456",
+          "description": "短信验证码"
+        }
+      ],
+      "auth_required": false,
+      "expected_status": 200,
+      "error_status": 400,
+      "unauthorized_status": 401,
+      "response_fields": [
+        "code",
+        "data.user_id"
+      ]
+    }
+  ]
+}

@@ -65,7 +65,6 @@ _AGENT_DIR: str = os.path.dirname(os.path.abspath(__file__))
 _ROOT: str = os.path.dirname(os.path.dirname(_AGENT_DIR))
 REGISTRY_PATH: str = os.path.join(_ROOT, "docs", "cases", "api_registry.json")
 
-MOCK_PORT: int = 8766
 RUN_TIMEOUT: int = 300  # 子进程/测试超时（秒）
 
 
@@ -120,12 +119,52 @@ def _fingerprints_of(spec: StageSpec) -> list[str]:
         if _exists_nonempty(p)
     ]
 
+# ── Day 41：把"路径从哪来"抽成纯函数（可测性 = 设计的产物）──
+def pytest_suite_target(spec: StageSpec) -> str:
+    """执行段要跑的 **套件文件**（不是目录）绝对路径。
 
-def _run_cmd(cmd_body: str) -> int:
-    """执行蓝图 cmd（python -c 语句体）：llm 段在 --with-llm 时由子进程跑真 API。"""
-    print(f"  ▶ python -c {cmd_body[:70]}...")
+    ⚠️ Day 41 修正：原来把 `os.path.dirname(suite)` 整个目录喂给 pytest。
+       产物加场景命名空间后 `outputs/generated_tests/` 下会同时存在 login 的
+       套件和 `register/` 子目录 → 跑 login 的 S6 会**连带收集 register 的用例**
+       （并发跑两个场景时更糟）。改成点名文件：pytest 仍会加载同目录的
+       conftest.py（fixture 不丢），但不再越界收集。
+    """
+    return _abs(spec.inputs[0])
+
+
+def find_junit_input(spec: StageSpec, keyword: str) -> str | None:
+    """按 keyword（normal/bug）从 **spec.inputs** 里找出对应的 junit 相对路径。
+
+    ⚠️ Day 41 去掉的硬编码：`_run_exec_report` 原来写死
+       `outputs/flow/junit_{keyword}.xml` —— Day 39 已经把 outputs 改成按
+       `spec.outputs` 驱动了，inputs 侧的路径却还是死的，所以产物一进
+       `outputs/flow/register/` 就找不到 junit（`--no-bug-probe` 那次踩的是同一个坑）。
+       现在：声明里有什么就用什么，路径永生跟随蓝图。
+    """
+    suffix: str = f"junit_{keyword}.xml"
+    for path in spec.inputs:
+        if path.endswith(suffix):
+            return path
+    return None
+
+
+def _llm_cache_prefix() -> str:
+    """llm 段的缓存注入前缀（延迟 import：执行器冷启动不必拖 langchain）。"""
+    from day41_cache_wiring import cache_prefix  # noqa: PLC0415
+
+    return cache_prefix()
+
+def _run_cmd(cmd_body: str, *, use_cache: bool) -> int:
+    """执行蓝图 cmd（python -c 语句体）。
+
+    Day 41：`use_cache=True` 时在语句体前面拼一段"装全局缓存"的前缀 ——
+    ⚠️ 必须注入**子进程**：执行器是 `subprocess.run([sys.executable, "-c", ...])`，
+    父进程 set 过的全局变量子进程看不见（进程级状态不跨 exec）。
+    """
+    body: str = f"{_llm_cache_prefix()}{cmd_body}" if use_cache else cmd_body
+    print(f"  ▶ python -c {body[:70]}...")
     proc: subprocess.CompletedProcess[str] = subprocess.run(
-        [sys.executable, "-c", cmd_body],
+        [sys.executable, "-c", body],
         cwd=_AGENT_DIR,               # 子进程在 src/agent 跑：dayXX 模块可 import
         capture_output=True,
         text=True,
@@ -151,15 +190,15 @@ def _run_mock_pytest(spec: StageSpec) -> tuple[bool, str]:
     junit_rel: str = spec.outputs[0]
     junit_abs: str = _abs(junit_rel)
     os.makedirs(os.path.dirname(junit_abs), exist_ok=True)
-    suite_file: str = _abs(spec.inputs[0])
-    pytest_dir: str = os.path.dirname(suite_file)
+    suite_file: str = pytest_suite_target(spec)   # Day 41：点名文件，不喂目录
     argv: list[str] = [
-        sys.executable, "-m", "pytest", pytest_dir,
+        sys.executable, "-m", "pytest", suite_file,
         "-q", "--no-header", "--junitxml", junit_abs,
     ]
     mode: str = "埋 Bug 版(bug_mode=True)" if spec.mock_bug else "正常版(bug_mode=False)"
-    print(f"  ▶ mock {MOCK_PORT} {mode} → pytest → {junit_rel}")
-    start_mock(MOCK_PORT, bug_mode=spec.mock_bug)
+    print(f"  ▶ mock {spec.mock_port}/{spec.mock_scenario} {mode} → pytest "
+          f"{os.path.basename(suite_file)} → {junit_rel}")
+    start_mock(spec.mock_port, bug_mode=spec.mock_bug, scenario=spec.mock_scenario)
     try:
         proc: subprocess.CompletedProcess[str] = subprocess.run(
             argv, capture_output=True, text=True,
@@ -192,10 +231,10 @@ def render_exec_report(
     stats = summarize(outcomes)
     defects = find_defects(outcomes)
     lines: list[str] = [
-        f"# 全流程执行报告：login · {label}",
+        f"# 全流程执行报告：{scenario_label_of(registry)} · {label}",
         "",
         f"**日期**: {datetime.now():%Y-%m-%d %H:%M}",
-        "**执行**: mock 靶场 + outputs/generated_tests（7 pytest node）",
+        f"**执行**: mock 靶场 + 生成套件（{len(outcomes)} 个 pytest node）",
         "",
         "## 执行摘要",
         f"- 用例总数: {stats.total}",
@@ -243,17 +282,20 @@ def _run_exec_report(spec: StageSpec) -> tuple[bool, str]:
       · 有旧产物时 → 拿【陈旧】junit_bug 再渲染一份 bug 报告（产出与档位不符）。
     现在：outputs 里有几份就渲染几份；对应 junit 不在则跳过并打印原因。
     """
-    registry: list[CaseEntry] = load_case_registry(REGISTRY_PATH)
+    registry_rel: str | None = next((p for p in spec.inputs if p.endswith(".json")), None)
+    registry: list[CaseEntry] = load_case_registry(
+        _abs(registry_rel) if registry_rel is not None else REGISTRY_PATH
+    )
     rendered: list[str] = []
     skipped: list[str] = []
     for out_rel in spec.outputs:
         keyword: str = "normal" if "normal" in out_rel else "bug"
-        junit_abs: str = _abs(f"outputs/flow/junit_{keyword}.xml")
-        if not os.path.isfile(junit_abs):
-            skipped.append(f"{out_rel}（{keyword} 版 junit 不存在）")
-            print(f"  ⏭ 跳过 {out_rel}：{keyword} 版 junit 不存在")
+        junit_rel: str | None = find_junit_input(spec, keyword)   # Day 41：从 spec.inputs 派生
+        if junit_rel is None:
+            skipped.append(f"{out_rel}（蓝图 inputs 未声明 {keyword} 版 junit）")
+            print(f"  ⏭ 跳过 {out_rel}：inputs 里没有 junit_{keyword}.xml")
             continue
-        with open(junit_abs, "r", encoding="utf-8") as f:
+        with open(junit_rel, "r", encoding="utf-8") as f:
             junit_text: str = f.read()
         md: str = render_exec_report(keyword, junit_text, registry)
         with open(_abs(out_rel), "w", encoding="utf-8") as f:
@@ -267,6 +309,17 @@ def _run_exec_report(spec: StageSpec) -> tuple[bool, str]:
         detail += "；跳过：" + "、".join(skipped)
     return True, detail
 
+def scenario_label_of(registry: list[CaseEntry]) -> str:
+    """从用例注册表推场景名（报告标题用）。注册表是**按场景切**的
+    （`docs/cases/api_registry.json` → login，`api_registry_register.json` → register），
+    取第一条的 module 即场景名。
+
+    ⚠️ Day 41 端到端实测踩到的坑：报告标题原来写死
+       `# 全流程执行报告：login · …`。login 场景下它**恰好是对的**，所以任何单测
+       都抓不到；只有真跑第二个场景才现形（register 的报告标题写着 login）。
+       硬编码的"对"是运气，不是正确 —— 端到端测试的价值正在于此。
+    """
+    return registry[0].module if registry else "unknown"
 
 # ═══════════════════════════════════════════════════════
 # 执行器（练习 2：单段执行 + 全流程执行）
@@ -276,6 +329,7 @@ def _run_stage(
     *,
     with_llm: bool,
     force: bool,
+    use_cache: bool = True,
 ) -> StageRecord:
     """跑一个 stage：manual 占位 → 断点续跑 → llm 跳过/执行 → code 执行。"""
     print(f"── {spec.stage_id} {spec.title}（{spec.kind} / {spec.source}）")
@@ -304,7 +358,8 @@ def _run_stage(
         elif spec.runner == "exec_report":
             ok, detail = _run_exec_report(spec)
         elif spec.cmd:
-            ok = _run_cmd(spec.cmd) == 0
+            # 缓存只注入 **llm 段**（code 段不调模型，多一次 import 纯属浪费）
+            ok = _run_cmd(spec.cmd, use_cache=use_cache and spec.kind == "llm") == 0
             detail = "cmd 子进程完成（exit=0）" if ok else "cmd 子进程非零退出"
         else:
             ok = False
@@ -330,19 +385,24 @@ def run_flow(
     with_llm: bool = False,
     force: bool = False,
     fail_fast: bool = False,
+    use_cache: bool = True,
 ) -> FlowReport:
-    """按蓝图顺序执行全流程：一段失败不中断（失败隔离），--fail-fast 才中断。"""
+    """
+    按蓝图顺序执行全流程：一段失败不中断（失败隔离），--fail-fast 才中断。
+    Day 41 新增 `use_cache`：llm 段是否注入全局缓存（默认开）。
+    关它的场景：① 想量"冷启动"真实耗时；② 怀疑缓存串味时要一份干净基线。
+    """
     records: list[StageRecord] = []
     plan: list[StageSpec] = BLUEPRINT if blueprint is None else blueprint
     for spec in plan:
-        record = _run_stage(spec, with_llm=with_llm, force=force)
+        record = _run_stage(spec, with_llm=with_llm, force=force, use_cache=use_cache)
         records.append(record)
         if record.status == "run_failed" and fail_fast:
             print("  ⚠️ --fail-fast：遇到 run_failed 中断整链")
             break
     return FlowReport(
         started_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        note=f"with_llm={with_llm} force={force} fail_fast={fail_fast}",
+        note=f"with_llm={with_llm} force={force} fail_fast={fail_fast} use_cache={use_cache}",
         stages=records,
     )
 
@@ -378,11 +438,26 @@ def render_flow_report_markdown(report: FlowReport) -> str:
     return "\n".join(lines)
 
 
-def _persist_report(report: FlowReport) -> tuple[str, str]:
-    """落盘 flow_report.json + .md，返回 (json_path, md_path)。"""
-    os.makedirs(FLOW_DIR, exist_ok=True)
-    json_path: str = os.path.join(FLOW_DIR, "flow_report.json")
-    md_path: str = os.path.join(FLOW_DIR, "flow_report.md")
+def flow_report_dir(ns: str = "") -> str:
+    """flow_report 的落盘目录：'' → `outputs/flow`；'register' → `outputs/flow/register`。
+
+    为什么跟随场景：一份 flow_report 只描述**一次**执行；两场景共用一份就互相
+    覆盖，审计记录直接丢一半。
+    """
+    return os.path.join(FLOW_DIR, ns) if ns else FLOW_DIR
+
+
+def persist_flow_report(report: FlowReport, ns: str = "") -> tuple[str, str]:
+    """落盘 flow_report.json + .md，返回 (json_path, md_path)。
+
+    Day 41：从私有的 `_persist_report` 提升为**公开入口**——因为
+    `cli.py run` 也必须在跑完后留下审计记录（原来只有练习脚本会落盘，
+    命令行跑完什么都不留，出了问题无从复盘）。
+    """
+    target_dir: str = flow_report_dir(ns)
+    os.makedirs(target_dir, exist_ok=True)
+    json_path: str = os.path.join(target_dir, "flow_report.json")
+    md_path: str = os.path.join(target_dir, "flow_report.md")
     with open(json_path, "w", encoding="utf-8") as f:
         f.write(json.dumps(report.model_dump(), ensure_ascii=False, indent=2))
     with open(md_path, "w", encoding="utf-8") as f:
@@ -410,7 +485,7 @@ def exp2_replay_and_exec() -> FlowReport:
     print("=" * 72)
     print("exp2_replay_and_exec：全流程执行（模型段跳过，code 段自动）")
     report = run_flow(with_llm=False, force=False)
-    json_path, md_path = _persist_report(report)
+    json_path, md_path = persist_flow_report(report)
     counts: dict[str, int] = _count_statuses(report)
     print("=" * 72)
     print(f"✅ flow_report 落盘: {json_path} / {md_path}")

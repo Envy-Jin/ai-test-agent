@@ -38,8 +38,31 @@ VALID_PASSWORD: str = "Test123456"
 VALID_TOKEN: str = "demo-token-123"
 PHONE_RE: re.Pattern[str] = re.compile(r"^1[3-9]\d{9}$")
 
-def make_handler(bug_mode: bool = False) -> type[BaseHTTPRequestHandler]:
-    """动态生成双接口 handler（闭包捕获 bug_mode，Day 28 模式）。"""
+# ── 注册场景契约（Day 41 新增，与 docs/apis/register_api.json 严格对齐）──
+VALID_REGISTER_PHONE: str = "13900139000"
+VALID_SMS_CODE: str = "123456"
+REGISTER_USER_ID: str = "U10001"
+
+
+def make_handler(bug_mode: bool = False, scenario: str = "login") -> type[BaseHTTPRequestHandler]:
+    """按场景生成 handler（Day 41：mock 靶场从"只有登录"变成"按场景分派"）。
+
+    scenario 决定实现哪套接口：
+      "login"    → POST /api/login + GET /api/orders（**原实现逐字未动**）
+      "register" → POST /api/register（短信验证码注册）
+    其他值 → 落到 login 分支（调用方传错场景时至少行为可预测；真起不来会 404 现形）。
+
+    ⚠️ 为什么必须加这个维度：S6/S7 是「把生成的套件打到 mock 上」。没有场景维度的
+       mock 只有 login 两个接口 → register 的套件全打 404 → 而执行器把"有用例失败"
+       判为合法结果 → **绿着错**（报告里 4 条失败全被当成"发现了缺陷"）。
+    """
+    if scenario == "register":
+        return _make_register_handler(bug_mode)
+    return _make_login_handler(bug_mode)
+
+
+def _make_login_handler(bug_mode: bool = False) -> type[BaseHTTPRequestHandler]:
+    """登录场景 handler：POST /api/login（公开）+ GET /api/orders（需鉴权）。"""
 
     def _do_post(self: BaseHTTPRequestHandler) -> None:
         if self.path != "/api/login":
@@ -93,6 +116,56 @@ def make_handler(bug_mode: bool = False) -> type[BaseHTTPRequestHandler]:
 
     return DualHandler
 
+def _make_register_handler(bug_mode: bool = False) -> type[BaseHTTPRequestHandler]:
+    """注册场景 handler：POST /api/register（手机号 + 短信验证码）。
+
+    接口契约（与 docs/apis/register_api.json 对齐）：
+      空 phone 或空 code                    → 400 {"code": 40001}
+      phone=13900139000 & code=123456       → 200 {"code": 0, "data": {"user_id": "U10001"}}
+      其他（验证码不匹配）                  → 401 {"code": 40101}（bug_mode → 200 且真的建号）
+    其他路径 → 404；GET 一律 404（本场景暂无查询接口）。
+
+    🐛 埋 Bug（bug_mode=True）：**验证码根本不校验** → 任意 code 都能注册成功。
+       对应 docs/bugs/register_bugs.md 的 BUG-R01（验证码形同虚设）。
+    """
+
+    def _do_post(self: BaseHTTPRequestHandler) -> None:
+        if self.path != "/api/register":
+            _send_json(self, 404, {"code": 40400, "message": f"未知接口 {self.path}"})
+            return
+        payload: dict[str, object] = _read_json(self)
+        code_raw: object = payload.get("code", "")
+        phone_raw: object = payload.get("phone", "")
+        code: str = code_raw if isinstance(code_raw, str) else ""
+        phone: str = phone_raw if isinstance(phone_raw, str) else ""
+        success: dict[str, object] = {
+            "code": 0, "message": "注册成功", "data": {"user_id": REGISTER_USER_ID},
+        }
+        if not phone or not code:
+            _send_json(self, 400, {"code": 40001, "message": "手机号和验证码不能为空"})
+        elif phone == VALID_REGISTER_PHONE and code == VALID_SMS_CODE:
+            _send_json(self, 200, success)
+        elif bug_mode:
+            # 🐛 缺陷：验证码未校验 → 错误验证码也注册成功（应 401）
+            _send_json(self, 200, success)
+        else:
+            _send_json(self, 401, {"code": 40101, "message": "验证码错误"})
+
+    def _do_get(self: BaseHTTPRequestHandler) -> None:
+        _send_json(self, 404, {"code": 40400, "message": f"注册场景未实现 GET {self.path}"})
+
+    class RegisterHandler(BaseHTTPRequestHandler):
+        """注册接口 handler。"""
+
+        do_POST = _do_post
+        do_GET = _do_get
+
+        def log_message(self, format: str, *args: object) -> None:
+            """静音默认日志（避免测试刷屏）。"""
+            return
+
+    return RegisterHandler
+
 def _read_json(handler: BaseHTTPRequestHandler) -> dict[str, object]:
     """读取请求体并解析 JSON（Content-Length 是 str|None → or '0'，Day 27 坑位）。"""
     length_raw: str | None = handler.headers.get("Content-Length")
@@ -122,7 +195,7 @@ def _send_json(handler: BaseHTTPRequestHandler, status: int, payload: dict[str, 
 _server: HTTPServer | None = None
 
 
-def start_mock(port: int = 8766, bug_mode: bool = False) -> HTTPServer:
+def start_mock(port: int = 8766, bug_mode: bool = False, scenario: str = "login") -> HTTPServer:
     """启动双接口 mock（后台线程），返回 server 实例。
 
     ⚠️ stop_mock() 必须从【外部线程】调用（handler 内 shutdown 会死锁，Day 27 坑位）。
@@ -131,13 +204,13 @@ def start_mock(port: int = 8766, bug_mode: bool = False) -> HTTPServer:
     if _server is not None:
         return _server
     try:
-        server: HTTPServer = HTTPServer(("127.0.0.1", port), make_handler(bug_mode))
+        server: HTTPServer = HTTPServer(("127.0.0.1", port), make_handler(bug_mode, scenario))
     except OSError as exc:
         raise RuntimeError(f"端口 {port} 被占用，换一个端口重试（start_mock(port=...)）") from exc
     threading.Thread(target=server.serve_forever, daemon=True).start()
     _server = server
     mode: str = "埋Bug版" if bug_mode else "正常版"
-    print(f"✅ 双接口 mock（{mode}）已启动: http://127.0.0.1:{port}（POST /api/login + GET /api/orders）")
+    print(f"✅ [{scenario}] mock（{mode}）已启动: http://127.0.0.1:{port}")
     return server
 
 
@@ -196,9 +269,47 @@ def verify_bug_mock(port: int = 8766) -> None:
     finally:
         stop_mock()
 
+def verify_register_mock(port: int = 8767) -> None:
+    """注册场景 4 分支验证（正常/缺 phone/缺 code/错验证码，零外网）。
 
+    ⚠️ 端口用 8767（= docs/apis/register_api.json 的 base_url 端口）。
+    """
+    print("=" * 60)
+    print("实验：verify_register_mock —— register 场景 4 分支")
+    start_mock(port, scenario="register")
+    try:
+        _fire(port, "POST", "/api/register", "正常注册",
+              {"code": VALID_SMS_CODE, "phone": VALID_REGISTER_PHONE}, expect_status=200)
+        _fire(port, "POST", "/api/register", "缺 phone",
+              {"code": VALID_SMS_CODE}, expect_status=400)
+        _fire(port, "POST", "/api/register", "缺 code",
+              {"phone": VALID_REGISTER_PHONE}, expect_status=400)
+        _fire(port, "POST", "/api/register", "错验证码",
+              {"code": "000000", "phone": VALID_REGISTER_PHONE}, expect_status=401)
+        print("✅ register 正常版 4 分支全部符合预期")
+    finally:
+        stop_mock()
 
+def verify_register_bug_mock(port: int = 8767) -> None:
+    """注册场景埋 Bug 版验证：缺陷 BUG-R01（验证码未校验）行为确认。
 
+    ⚠️ 端口用 8767（= docs/apis/register_api.json 的 base_url 端口）。
+    正常分支不受影响、缺参仍是 400 —— 只有「验证码不匹配」这一支被放过，
+    所以 S7 里那条期望 401 的用例会失败 → 缺陷现形。
+    """
+    print("=" * 60)
+    print("实验：verify_register_bug_mock —— 埋 Bug 版（缺陷: 验证码未校验 → 应401实际200）")
+    start_mock(port, bug_mode=True, scenario="register")
+    try:
+        _fire(port, "POST", "/api/register", "正常注册（不受影响）",
+              {"code": VALID_SMS_CODE, "phone": VALID_REGISTER_PHONE}, expect_status=200)
+        _fire(port, "POST", "/api/register", "错验证码（应401实际200）",
+              {"code": "000000", "phone": VALID_REGISTER_PHONE}, expect_status=200)
+        _fire(port, "POST", "/api/register", "缺 phone（仍 400）",
+              {"code": VALID_SMS_CODE}, expect_status=400)
+        print("✅ 埋 Bug 版缺陷行为确认（验证码未校验）")
+    finally:
+        stop_mock()
 
 if __name__ == "__main__":
     # verify_mock()

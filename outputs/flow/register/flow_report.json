@@ -1,5 +1,5 @@
 {
-  "started_at": "2026-09-20 21:43:07",
+  "started_at": "2026-09-20 21:39:27",
   "note": "with_llm=False force=True fail_fast=False use_cache=True",
   "stages": [
     {
@@ -18,53 +18,58 @@
     },
     {
       "stage_id": "S3_api_plan",
-      "status": "skipped_needs_api",
-      "duration_s": 0.0,
-      "fingerprints": [],
-      "detail": "模型段需要真实 API：python day34_orchestrator.py --with-llm 补跑"
+      "status": "run_ok",
+      "duration_s": 83.53,
+      "fingerprints": [
+        "outputs/api_test_plan_register.json#23e86a7d0fbb",
+        "outputs/api_test_plan_register.md#24ca853f4063"
+      ],
+      "detail": "cmd 子进程完成（exit=0）"
     },
     {
       "stage_id": "S4_test_codegen",
       "status": "run_ok",
-      "duration_s": 21.31,
+      "duration_s": 25.97,
       "fingerprints": [
-        "outputs/generated_tests/conftest.py#ab71e884cd68",
-        "outputs/generated_tests/test_api_suite.py#4ade0c95b54f"
+        "outputs/generated_tests/register/conftest.py#3c4aca15367a",
+        "outputs/generated_tests/register/test_api_suite.py#81c6e5100ea3"
       ],
       "detail": "cmd 子进程完成（exit=0）"
     },
     {
       "stage_id": "S5_test_data",
-      "status": "skipped_needs_api",
-      "duration_s": 0.0,
-      "fingerprints": [],
-      "detail": "模型段需要真实 API：python day34_orchestrator.py --with-llm 补跑"
+      "status": "run_ok",
+      "duration_s": 25.29,
+      "fingerprints": [
+        "outputs/data_gen/register/register_normal.json#d30f79eca4e2"
+      ],
+      "detail": "cmd 子进程完成（exit=0）"
     },
     {
       "stage_id": "S6_execute_normal",
       "status": "run_ok",
-      "duration_s": 5.6,
+      "duration_s": 3.96,
       "fingerprints": [
-        "outputs/flow/junit_normal.xml#9d34885bbc68"
+        "outputs/flow/register/junit_normal.xml#9f0a37fe8d27"
       ],
-      "detail": "pytest exit=0，JUnit 已落盘 outputs/flow/junit_normal.xml"
+      "detail": "pytest exit=0，JUnit 已落盘 outputs/flow/register/junit_normal.xml"
     },
     {
       "stage_id": "S7_execute_bug",
       "status": "run_ok",
-      "duration_s": 4.68,
+      "duration_s": 3.84,
       "fingerprints": [
-        "outputs/flow/junit_bug.xml#e22b5bd697cd"
+        "outputs/flow/register/junit_bug.xml#8c14135e012c"
       ],
-      "detail": "pytest exit=1，JUnit 已落盘 outputs/flow/junit_bug.xml"
+      "detail": "pytest exit=1，JUnit 已落盘 outputs/flow/register/junit_bug.xml"
     },
     {
       "stage_id": "S8_exec_report",
       "status": "run_ok",
-      "duration_s": 0.07,
+      "duration_s": 0.13,
       "fingerprints": [
-        "outputs/flow/exec_report_normal.md#2b7df4951351",
-        "outputs/flow/exec_report_bug.md#669ad812140c"
+        "outputs/flow/register/exec_report_normal.md#ed6df27636a2",
+        "outputs/flow/register/exec_report_bug.md#64a7e9ce0a20"
       ],
       "detail": "2 份执行报告已落盘"
     },

@@ -65,6 +65,14 @@ class StageSpec(BaseModel):
     outputs: list[str] = Field(default_factory=list)     # 相对项目根
     cmd: str = ""                                        # python -c 语句体（cmd runner）
     mock_bug: bool = False                               # mock_pytest runner：埋 Bug 开关
+    # Day 41 新增：mock 监听端口 + 实现哪套接口（mock_pytest runner 用）。
+    # 为什么必须进契约：执行器原来用模块常量 `MOCK_PORT` 起 mock、用的还是写死的
+    # login handler，蓝图里写的端口**只是个注释**——声明与执行不同源，第二个场景
+    # （register，8767 + /api/register）一上就打到空气（一片 404 却仍判 run_ok）。
+    # 契约：mock_port 必须与接口文档 base_url 的端口一致、mock_scenario 必须等于场景名
+    #       （见 day35_scenario 的 find_scenario_contract_violations）。
+    mock_port: int = 8766
+    mock_scenario: str = "login"
     note: str = ""
 
 

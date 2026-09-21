@@ -1,0 +1,50 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "table": "register",
+    "total": 5,
+    "list": [
+      {
+        "id": 1,
+        "phone": "13000000000",
+        "code": 100000,
+        "password": "密码0",
+        "username": "user_000",
+        "status": "待激活"
+      },
+      {
+        "id": 2,
+        "phone": "14000000001",
+        "code": 100001,
+        "password": "密码1",
+        "username": "user_001",
+        "status": "已激活"
+      },
+      {
+        "id": 3,
+        "phone": "15000000002",
+        "code": 100002,
+        "password": "密码2",
+        "username": "user_002",
+        "status": "已锁定"
+      },
+      {
+        "id": 4,
+        "phone": "16000000003",
+        "code": 100003,
+        "password": "密码3",
+        "username": "user_003",
+        "status": "待激活"
+      },
+      {
+        "id": 5,
+        "phone": "17000000004",
+        "code": 100004,
+        "password": "密码4",
+        "username": "user_004",
+        "status": "已激活"
+      }
+    ]
+  }
+}
