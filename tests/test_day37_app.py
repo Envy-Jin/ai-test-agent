@@ -50,9 +50,16 @@ def test_default_bug_probe_checkbox_checked(app_test: AppTest) -> None:
     assert probe.value is True, "bug_probe 应默认开启"
 
 
-def test_scenario_selector_has_login_register(app_test: AppTest) -> None:
-    """场景下拉包含 login / register 两个选项。"""
+def test_scenario_selector_matches_registry(app_test: AppTest) -> None:
+    """场景下拉 == **资产层注册表**里的全部场景（Day 42：不再写死清单）。
+
+    ⚠️ 原来这里断言的是 `== {"login", "register"}` —— 那是**第二份写死的场景清单**：
+    加第三个场景时它会红（红得对，但它守的是「测试记得改」，而不是「UI 真的同源」）。
+    改为从 `SCENARIO_REGISTRY` 派生后，再加场景**不需要**动这个文件。
+    """
+    from day35_scenario import SCENARIO_REGISTRY
+
     # ⚠️ 不能用 at.selectbox[0]：元素顺序主区先于 sidebar，
     #    下标 0 实际是「产物浏览」页签的“选择报告”下拉（选项是报告文件名）
     selector = next(sb for sb in app_test.sidebar.selectbox if sb.label == "被测场景")
-    assert set(selector.options) == {"login", "register"}, selector.options
+    assert set(selector.options) == set(SCENARIO_REGISTRY), selector.options

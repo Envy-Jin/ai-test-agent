@@ -1,0 +1,219 @@
+{
+  "feature_name": "用户订单退款",
+  "summary": "已支付订单的用户可发起退款申请，系统校验归属与金额后受理并生成退款单，需满足单笔金额、每日次数及订单状态等约束。",
+  "test_suites": [
+    {
+      "suite_name": "正向功能测试",
+      "suite_type": "功能测试",
+      "test_cases": [
+        {
+          "id": "TC001",
+          "title": "成功提交包含必填项和选填项的退款申请",
+          "priority": "P0",
+          "type": "功能",
+          "preconditions": [
+            "用户已登录",
+            "存在当前用户下状态为已支付的订单 ORD-1001，实付金额为 100.00 元"
+          ],
+          "steps": [
+            "进入订单详情页，点击退款申请",
+            "输入正确的订单号、合法的退款金额及退款原因",
+            "提交退款申请"
+          ],
+          "expected_result": "系统受理成功，返回 refund_id，生成退款单并进入人工审核流程",
+          "test_data": {
+            "order_no": "ORD-1001",
+            "refund_amount": "50.00",
+            "refund_reason": "质量问题"
+          }
+        }
+      ]
+    },
+    {
+      "suite_name": "边界值测试",
+      "suite_type": "边界测试",
+      "test_cases": [
+        {
+          "id": "TC002",
+          "title": "退款金额为最小值大于0的边界（0.01元）",
+          "priority": "P1",
+          "type": "边界",
+          "preconditions": [
+            "用户已登录",
+            "存在状态为已支付的订单 ORD-1002"
+          ],
+          "steps": [
+            "发起退款申请，输入退款金额为 0.01"
+          ],
+          "expected_result": "系统受理成功，正常生成退款单",
+          "test_data": {
+            "order_no": "ORD-1002",
+            "refund_amount": "0.01"
+          }
+        },
+        {
+          "id": "TC003",
+          "title": "退款金额等于订单实付金额的边界",
+          "priority": "P1",
+          "type": "边界",
+          "preconditions": [
+            "用户已登录",
+            "存在实付金额为 100.00 元的已支付订单 ORD-1003"
+          ],
+          "steps": [
+            "发起退款申请，输入退款金额为 100.00"
+          ],
+          "expected_result": "系统受理成功，正常生成退款单",
+          "test_data": {
+            "order_no": "ORD-1003",
+            "refund_amount": "100.00"
+          }
+        },
+        {
+          "id": "TC004",
+          "title": "退款金额小数位为两位数的边界",
+          "priority": "P1",
+          "type": "边界",
+          "preconditions": [
+            "用户已登录",
+            "存在已支付订单 ORD-1004"
+          ],
+          "steps": [
+            "发起退款申请，输入退款金额为 50.99"
+          ],
+          "expected_result": "系统受理成功，正常生成退款单",
+          "test_data": {
+            "order_no": "ORD-1004",
+            "refund_amount": "50.99"
+          }
+        }
+      ]
+    },
+    {
+      "suite_name": "异常场景测试",
+      "suite_type": "异常测试",
+      "test_cases": [
+        {
+          "id": "TC005",
+          "title": "退款金额超过订单实付金额",
+          "priority": "P1",
+          "type": "异常",
+          "preconditions": [
+            "用户已登录",
+            "存在实付金额为 100.00 元的已支付订单 ORD-1005"
+          ],
+          "steps": [
+            "发起退款申请，输入退款金额为 100.01"
+          ],
+          "expected_result": "系统提示退款金额不得超过订单实付金额，提交失败",
+          "test_data": {
+            "order_no": "ORD-1005",
+            "refund_amount": "100.01"
+          }
+        },
+        {
+          "id": "TC006",
+          "title": "同一订单重复提交退款申请",
+          "priority": "P1",
+          "type": "异常",
+          "preconditions": [
+            "用户已登录",
+            "订单 ORD-1006 当前已存在一条待审核的退款单"
+          ],
+          "steps": [
+            "再次对订单 ORD-1006 发起退款申请并提交"
+          ],
+          "expected_result": "系统提示同一时刻只允许存在一条待审核或已退款的退款单，提交失败",
+          "test_data": {
+            "order_no": "ORD-1006",
+            "refund_amount": "10.00"
+          }
+        },
+        {
+          "id": "TC007",
+          "title": "对已取消或已完成的订单发起退款",
+          "priority": "P1",
+          "type": "异常",
+          "preconditions": [
+            "用户已登录",
+            "存在状态为已完成的订单 ORD-1007"
+          ],
+          "steps": [
+            "对订单 ORD-1007 发起退款申请"
+          ],
+          "expected_result": "系统提示订单状态不允许发起退款，提交失败",
+          "test_data": {
+            "order_no": "ORD-1007",
+            "refund_amount": "10.00"
+          }
+        },
+        {
+          "id": "TC008",
+          "title": "同一用户每日发起退款申请超过 10 次",
+          "priority": "P1",
+          "type": "异常",
+          "preconditions": [
+            "用户已登录",
+            "当日已成功提交 10 次退款申请"
+          ],
+          "steps": [
+            "尝试发起当日第 11 次退款申请并提交"
+          ],
+          "expected_result": "系统提示每日发起退款申请不超过 10 次，提交失败",
+          "test_data": {
+            "order_no": "ORD-1011",
+            "refund_amount": "10.00"
+          }
+        }
+      ]
+    },
+    {
+      "suite_name": "安全性测试",
+      "suite_type": "安全测试",
+      "test_cases": [
+        {
+          "id": "TC009",
+          "title": "越权访问：用户对非本人名下的订单发起退款",
+          "priority": "P1",
+          "type": "安全",
+          "preconditions": [
+            "用户A已登录",
+            "存在属于用户B的已支付订单 ORD-2001"
+          ],
+          "steps": [
+            "用户A尝试输入订单号 ORD-2001 发起退款申请"
+          ],
+          "expected_result": "系统校验订单归属失败，提示无权限或订单不存在，提交失败",
+          "test_data": {
+            "order_no": "ORD-2001",
+            "refund_amount": "10.00"
+          }
+        }
+      ]
+    },
+    {
+      "suite_name": "兼容性测试",
+      "suite_type": "兼容性测试",
+      "test_cases": [
+        {
+          "id": "TC010",
+          "title": "在移动端与PC端正常提交退款申请",
+          "priority": "P2",
+          "type": "兼容",
+          "preconditions": [
+            "用户已登录",
+            "准备好移动端浏览器和PC端主流浏览器"
+          ],
+          "steps": [
+            "分别在移动端H5和PC端Web页面进入退款页并完成正常退款提交"
+          ],
+          "expected_result": "界面显示正常，各输入项与按钮响应正确，功能正常可用",
+          "test_data": {
+            "order_no": "ORD-1001",
+            "refund_amount": "10.00"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+    "title": "退款服务接口",
+    "base_url": "http://127.0.0.1:8768",
+    "endpoints": [
+      {
+        "name": "订单退款申请",
+        "method": "POST",
+        "path": "/api/refund",
+        "summary": "对已支付订单发起退款申请",
+        "auth_required": false,
+        "expected_status": 200,
+        "error_status": 400,
+        "unauthorized_status": 401,
+        "response_fields": ["code", "data.refund_id"],
+        "params": [
+          {"name": "order_id", "location": "body", "required": true, "param_type": "string",
+           "example": "ORD-1001", "description": "订单号"},
+          {"name": "amount", "location": "body", "required": true, "param_type": "string",
+           "example": "99.5", "description": "退款金额（元）"}
+        ]
+      }
+    ]
+  }

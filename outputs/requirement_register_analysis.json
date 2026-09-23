@@ -1,0 +1,230 @@
+{
+  "feature_name": "用户注册",
+  "summary": "新用户通过手机号、验证码、密码和用户名进行注册，注册成功后自动登录，并受发送频率、IP限制及密码强度等约束。",
+  "test_suites": [
+    {
+      "suite_name": "正向功能测试",
+      "suite_type": "功能测试",
+      "test_cases": [
+        {
+          "id": "TC001",
+          "title": "所有字段输入合法数据成功注册并自动登录",
+          "priority": "P0",
+          "type": "功能",
+          "preconditions": [
+            "手机号未被注册",
+            "IP未达到每小时注册上限"
+          ],
+          "steps": [
+            "打开注册页面",
+            "输入合法的11位手机号",
+            "获取并输入6位有效验证码",
+            "输入符合要求的密码",
+            "输入符合要求的用户名",
+            "点击注册按钮"
+          ],
+          "expected_result": "提示注册成功，系统保存用户信息，且用户处于已登录状态",
+          "test_data": {
+            "phone": "13800138000",
+            "code": "123456",
+            "password": "Password123",
+            "username": "test_user1"
+          }
+        }
+      ]
+    },
+    {
+      "suite_name": "边界值测试",
+      "suite_type": "边界测试",
+      "test_cases": [
+        {
+          "id": "TC002",
+          "title": "用户名长度边界值测试-3个字符",
+          "priority": "P1",
+          "type": "边界",
+          "preconditions": [
+            "手机号未被注册"
+          ],
+          "steps": [
+            "输入有效手机号和验证码",
+            "输入有效密码",
+            "输入3个字符的用户名",
+            "点击注册"
+          ],
+          "expected_result": "注册成功",
+          "test_data": {
+            "username": "abc",
+            "password": "Password123"
+          }
+        },
+        {
+          "id": "TC003",
+          "title": "用户名长度边界值测试-20个字符",
+          "priority": "P1",
+          "type": "边界",
+          "preconditions": [
+            "手机号未被注册"
+          ],
+          "steps": [
+            "输入有效手机号和验证码",
+            "输入有效密码",
+            "输入20个字符的用户名",
+            "点击注册"
+          ],
+          "expected_result": "注册成功",
+          "test_data": {
+            "username": "abcdefghijklmnopqrst",
+            "password": "Password123"
+          }
+        },
+        {
+          "id": "TC004",
+          "title": "密码长度边界值测试-正好8位",
+          "priority": "P1",
+          "type": "边界",
+          "preconditions": [
+            "手机号未被注册"
+          ],
+          "steps": [
+            "输入有效手机号和验证码",
+            "输入正好8位且含数字和字母的密码",
+            "输入有效用户名",
+            "点击注册"
+          ],
+          "expected_result": "注册成功",
+          "test_data": {
+            "password": "Ab123456"
+          }
+        }
+      ]
+    },
+    {
+      "suite_name": "异常场景测试",
+      "suite_type": "异常测试",
+      "test_cases": [
+        {
+          "id": "TC005",
+          "title": "手机号格式错误或为空",
+          "priority": "P1",
+          "type": "异常",
+          "preconditions": [],
+          "steps": [
+            "输入非1开头或不足11位的手机号",
+            "填写其他必填项",
+            "点击注册"
+          ],
+          "expected_result": "提示手机号格式不正确，注册失败",
+          "test_data": {
+            "phone": "23800138000"
+          }
+        },
+        {
+          "id": "TC006",
+          "title": "验证码错误或超时",
+          "priority": "P1",
+          "type": "异常",
+          "preconditions": [],
+          "steps": [
+            "输入有效手机号",
+            "输入错误的6位验证码或超过5分钟的验证码",
+            "填写其他必填项",
+            "点击注册"
+          ],
+          "expected_result": "提示验证码错误或已失效，注册失败",
+          "test_data": {
+            "code": "000000"
+          }
+        },
+        {
+          "id": "TC007",
+          "title": "同一手机号重复注册",
+          "priority": "P1",
+          "type": "异常",
+          "preconditions": [
+            "手机号已被注册"
+          ],
+          "steps": [
+            "输入已注册的手机号",
+            "填写其他有效必填项",
+            "点击注册"
+          ],
+          "expected_result": "提示该手机号已被注册",
+          "test_data": {
+            "phone": "13800138000"
+          }
+        }
+      ]
+    },
+    {
+      "suite_name": "安全性测试",
+      "suite_type": "安全测试",
+      "test_cases": [
+        {
+          "id": "TC008",
+          "title": "密码为常见弱密码校验",
+          "priority": "P1",
+          "type": "安全",
+          "preconditions": [],
+          "steps": [
+            "输入有效手机号和验证码",
+            "输入弱密码123456",
+            "输入有效用户名",
+            "点击注册"
+          ],
+          "expected_result": "提示密码过于简单，包含常见弱密码，要求重新设置",
+          "test_data": {
+            "password": "123456"
+          }
+        },
+        {
+          "id": "TC009",
+          "title": "同一手机号每天发送验证码频次限制",
+          "priority": "P1",
+          "type": "安全",
+          "preconditions": [],
+          "steps": [
+            "输入目标手机号连续请求发送验证码达到5次",
+            "尝试请求第6次发送验证码"
+          ],
+          "expected_result": "提示获取验证码次数超限，拒绝发送",
+          "test_data": {
+            "phone": "13800138000"
+          }
+        },
+        {
+          "id": "TC010",
+          "title": "同一IP每小时注册账号数量限制",
+          "priority": "P1",
+          "type": "安全",
+          "preconditions": [
+            "当前IP已成功注册3个账号"
+          ],
+          "steps": [
+            "使用同一IP尝试注册第4个账号"
+          ],
+          "expected_result": "提示当前IP注册频率过快或超出限制，拒绝注册",
+          "test_data": {}
+        }
+      ]
+    },
+    {
+      "suite_name": "兼容性测试",
+      "suite_type": "兼容性测试",
+      "test_cases": [
+        {
+          "id": "TC011",
+          "title": "主流移动端浏览器注册页面显示与功能兼容性",
+          "priority": "P2",
+          "type": "兼容",
+          "preconditions": [],
+          "steps": [
+            "分别在主流移动浏览器中打开注册页面",
+            "执行注册核心流程"
+          ],
+          "expected_result": "页面元素展示正常，无错位，输入及点击交互功能正常",
+          "test_data": {}
+        }
+      ]
+    }
+  ]
+}

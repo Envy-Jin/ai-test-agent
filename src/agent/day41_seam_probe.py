@@ -34,8 +34,7 @@ from urllib.parse import urlparse
 from day34_flow_map import StageSpec
 from day35_common import ROOT, output_dir, read_text, write_text
 from day35_scenario import (
-    LOGIN_SCENARIO,
-    REGISTER_SCENARIO,
+    SCENARIO_REGISTRY,
     ScenarioConfig,
     build_blueprint,
 )
@@ -48,7 +47,12 @@ if sys.platform == "win32":
 MODEL_EXTS: frozenset[str] = frozenset({".md", ".txt", ".docx"})   # 文档 → 模型解析
 CODE_EXTS: frozenset[str] = frozenset({".json"})                   # 机器可读 → 代码直读
 
-SCENARIOS: tuple[ScenarioConfig, ...] = (LOGIN_SCENARIO, REGISTER_SCENARIO)
+# ⚠️ Day 42 修复：这里原来是 `(LOGIN_SCENARIO, REGISTER_SCENARIO)` —— **第二份写死的场景清单**。
+# 加第三个场景时它不会报错，只会"看不见"：探测照旧输出 0/0/0，而那三个 0 的含义
+# 已经从「三个场景都不冲突」**静默退化**成「我看的那两个不冲突」。
+# Day 42 实测（负向 sanity）：把 refund 的 mock_port 故意改错，本文件**仍然报 0** ——
+# 假绿实锤。改为从注册表派生后，新增场景自动进入探测范围。
+SCENARIOS: tuple[ScenarioConfig, ...] = tuple(SCENARIO_REGISTRY.values())
 
 
 def _ext(path_rel: str) -> str:
@@ -84,9 +88,9 @@ def _port_of(url: str) -> int | None:
 # 探测一：产物互相覆盖（静默覆盖）
 # ═══════════════════════════════════════════════════════
 def exp1_output_collisions() -> list[str]:
-    """两场景蓝图声明了同一个输出文件 → 后跑的覆盖先跑的（返回冲突清单）。"""
+    """任意两个场景的蓝图声明了同一个输出文件 → 后跑的覆盖先跑的（返回冲突清单）。"""
     print("=" * 72)
-    print("exp1_output_collisions：两场景产物路径冲突（静默覆盖）")
+    print(f"exp1_output_collisions：{len(SCENARIOS)} 个场景的产物路径冲突（静默覆盖）")
     declarers: dict[str, list[str]] = {}
     for sc in SCENARIOS:
         for spec in build_blueprint(sc):
@@ -100,7 +104,7 @@ def exp1_output_collisions() -> list[str]:
     for line in collisions:
         print(f"  ❌ {line}")
     if not collisions:
-        print("  ✅ 无冲突：两场景产物路径互不相交（可以并存，谁也不覆盖谁）")
+        print(f"  ✅ 无冲突：{len(SCENARIOS)} 个场景的产物路径两两不相交（可以并存，谁也不覆盖谁）")
     print(f"  冲突数 = {len(collisions)}（期望修复后为 0）")
     return collisions
 
@@ -204,9 +208,15 @@ def exp4_seam_report(out_dir: str | None = None) -> str:
         "> 由 `day41_seam_probe.py` 自动生成（零 API）：三项探测全部是**静态可断言**的，",
         "> 不必先跑一次端到端就能知道哪里会坏。",
         "",
+        f"**本次覆盖场景（{len(SCENARIOS)} 个）**：" + "、".join(sc.name for sc in SCENARIOS),
+        "",
+        "> Day 42 补：这一行是从**注册表**派生的。加它之前的版本不打印场景清单，",
+        "> 于是「加第三个场景」只会让探测**少看一个**，报告照旧写着「三项全部归零」",
+        "> —— 那正是最难查的一类绿：**绿得没错，只是少看**。",
+        "",
         f"## 一、产物路径冲突（{len(collisions)} 处）",
         "",
-        "两场景声明同一个输出文件 → 后跑的静默覆盖先跑的。",
+        f"{len(SCENARIOS)} 个场景里任意两个声明同一个输出文件 → 后跑的静默覆盖先跑的。",
         "",
     ]
     lines += ([f"- ❌ {c}" for c in collisions] or ["- ✅ 无"])

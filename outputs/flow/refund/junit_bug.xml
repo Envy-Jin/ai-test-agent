@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="4" time="0.903" timestamp="2026-09-21T19:46:51.758573+08:00" hostname="Dell-PC"><testcase classname="outputs.generated_tests.refund.test_api_suite.TestApiRefund" name="test_normal" time="0.009" /><testcase classname="outputs.generated_tests.refund.test_api_suite.TestApiRefund" name="test_missing_params[payload0]" time="0.054"><failure message="AssertionError: 期望 400 实际 200: {&quot;code&quot;: 0, &quot;message&quot;: &quot;退款申请已受理&quot;, &quot;data&quot;: {&quot;refund_id&quot;: &quot;RF10001&quot;}}&#10;assert 200 == 400&#10; +  where 200 = &lt;Response [200]&gt;.status_code">self = &lt;test_api_suite.TestApiRefund object at 0x000002167BB5C770&gt;
+base_url = 'http://127.0.0.1:8768', payload = {'amount': '99.5'}
+
+    @pytest.mark.parametrize("payload", [
+        {"amount": "99.5"},
+        {"order_id": "ORD-1001"},
+    ])
+    def test_missing_params(self, base_url, payload):
+        resp = _request("post", "/api/refund", base_url, body=payload)
+&gt;       assert resp.status_code == 400, f"期望 400 实际 {resp.status_code}: {resp.text[:200]}"
+E       AssertionError: 期望 400 实际 200: {"code": 0, "message": "退款申请已受理", "data": {"refund_id": "RF10001"}}
+E       assert 200 == 400
+E        +  where 200 = &lt;Response [200]&gt;.status_code
+
+outputs\generated_tests\refund\test_api_suite.py:34: AssertionError</failure></testcase><testcase classname="outputs.generated_tests.refund.test_api_suite.TestApiRefund" name="test_missing_params[payload1]" time="0.004"><failure message="AssertionError: 期望 400 实际 200: {&quot;code&quot;: 0, &quot;message&quot;: &quot;退款申请已受理&quot;, &quot;data&quot;: {&quot;refund_id&quot;: &quot;RF10001&quot;}}&#10;assert 200 == 400&#10; +  where 200 = &lt;Response [200]&gt;.status_code">self = &lt;test_api_suite.TestApiRefund object at 0x000002167BB5C8C0&gt;
+base_url = 'http://127.0.0.1:8768', payload = {'order_id': 'ORD-1001'}
+
+    @pytest.mark.parametrize("payload", [
+        {"amount": "99.5"},
+        {"order_id": "ORD-1001"},
+    ])
+    def test_missing_params(self, base_url, payload):
+        resp = _request("post", "/api/refund", base_url, body=payload)
+&gt;       assert resp.status_code == 400, f"期望 400 实际 {resp.status_code}: {resp.text[:200]}"
+E       AssertionError: 期望 400 实际 200: {"code": 0, "message": "退款申请已受理", "data": {"refund_id": "RF10001"}}
+E       assert 200 == 400
+E        +  where 200 = &lt;Response [200]&gt;.status_code
+
+outputs\generated_tests\refund\test_api_suite.py:34: AssertionError</failure></testcase><testcase classname="outputs.generated_tests.refund.test_api_suite.TestApiRefund" name="test_invalid_credentials" time="0.017"><failure message="AssertionError: 期望 401 实际 200: {&quot;code&quot;: 0, &quot;message&quot;: &quot;退款申请已受理&quot;, &quot;data&quot;: {&quot;refund_id&quot;: &quot;RF10001&quot;}}&#10;assert 200 == 401&#10; +  where 200 = &lt;Response [200]&gt;.status_code">self = &lt;test_api_suite.TestApiRefund object at 0x000002167BB5CAD0&gt;
+base_url = 'http://127.0.0.1:8768'
+
+    def test_invalid_credentials(self, base_url):
+        resp = _request("post", "/api/refund", base_url, body={"order_id": "invalid_value", "amount": "99.5"})
+&gt;       assert resp.status_code == 401, f"期望 401 实际 {resp.status_code}: {resp.text[:200]}"
+E       AssertionError: 期望 401 实际 200: {"code": 0, "message": "退款申请已受理", "data": {"refund_id": "RF10001"}}
+E       assert 200 == 401
+E        +  where 200 = &lt;Response [200]&gt;.status_code
+
+outputs\generated_tests\refund\test_api_suite.py:38: AssertionError</failure></testcase></testsuite></testsuites>

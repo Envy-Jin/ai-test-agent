@@ -29,9 +29,10 @@ import streamlit as st  # noqa: E402  # 需先桥接路径再导第三方无关�
 # 轻依赖资产：盘点页签页面加载就要用（day35_scenario 已不含执行器顶级导入 → 冷启动便宜）
 from day35_scenario import (  # noqa: E402
     LOGIN_SCENARIO,
-    REGISTER_SCENARIO,
+    SCENARIO_REGISTRY,
     ScenarioConfig,
     build_blueprint,
+    output_namespace,
     scan_blueprint,
     select_stages,
 )
@@ -42,11 +43,13 @@ if TYPE_CHECKING:  # 仅静态检查可见（Day38 冷启动瘦身）：这两�
     from day34_orchestrator import FlowReport
 
 
-# ── 场景注册表（数据：UI 只读不改）──
-_SCENARIOS: dict[str, ScenarioConfig] = {
-    LOGIN_SCENARIO.name: LOGIN_SCENARIO,
-    REGISTER_SCENARIO.name: REGISTER_SCENARIO,
-}
+# ── 场景注册表（Day 42：改为从资产层**派生**，不再自己维护第二份）──
+# 原来这里是 `{LOGIN_SCENARIO.name: LOGIN_SCENARIO, REGISTER_SCENARIO.name: REGISTER_SCENARIO}`
+# —— CLI 走注册表、UI 走字面量：加第三个场景时 **CLI 认得、UI 不认得**，
+# 而且**没有任何报错**（下拉框里就是少一个选项，谁也不会发现）。
+# 同源之后，加场景只需要改 day35_scenario 一处 —— 这正是 Day 41 给 cli.py 做过的事。
+# ⚠️ 复制一份（`dict(...)`）而不是直接持有注册表对象：UI 只读不改。
+_SCENARIOS: dict[str, ScenarioConfig] = dict(SCENARIO_REGISTRY)
 
 # ── 结果目录：flow 报告/junit 都在这（相对 ROOT）──
 _FLOW_DIR_REL: str = "outputs/flow"
@@ -62,14 +65,34 @@ def _pick_scenario(name: str) -> ScenarioConfig:
     return _SCENARIOS.get(name, LOGIN_SCENARIO)
 
 
-def _load_report_markdowns() -> dict[str, str]:
-    """读 outputs/flow 下的 .md 报告（供产物页签展示），返回 {文件名: 内容}。"""
-    flow_dir: Path = Path(ROOT) / _FLOW_DIR_REL
+def _load_report_markdowns(sc: ScenarioConfig, blueprint: list[StageSpec]) -> dict[str, str]:
+    """读【当前场景】的 flow 报告，返回 {文件名: 内容}（供产物页签展示）。
+
+    Day 42 修（5.2 验收发现）：修复前它**没有参数**，扫的是 `outputs/flow` **根目录**
+    （`*.md`、非递归）——
+      ① 与侧边栏场景零耦合：选 register 照样列出 login 的报告，且**不报错**；
+      ② 够不到子目录：register/refund 的报告在 `outputs/flow/<ns>/`，非递归永远看不见。
+    为什么以前照不出来：`output_namespace(login) == ""`（平铺兼容层）⇒ 根目录上恰好
+      只有 login 的产物 ⇒ **单场景时代它恰好是对的** —— 与 day34 的 `scenario_label_of`
+      是同一份病历（**写死的"对"是运气，不是正确**）。
+
+    修法取"同源"：路径来自**蓝图声明的产物**（`build_blueprint` 已按场景命名空间展开，
+      login 的 ns_prefix=="" 天然指向平铺根），再补一条编排器落盘的 flow_report。
+    一份代码同时覆盖「平铺」「子目录」两种形态，并自动排除 outputs/flow 根上那 4 份
+      **非场景产物**（flow_map / register_fill_plan / review_report / seam_report）。
+    """
+    ns: str = output_namespace(sc)
+    rels: list[str] = [
+        out for spec in blueprint for out in spec.outputs
+        if out.startswith(f"{_FLOW_DIR_REL}/") and out.endswith(".md")
+    ]
+    # flow_report 不在任何段的 outputs 里（编排器落盘）→ 按命名空间单独补一条
+    rels.append(f"{_FLOW_DIR_REL}/{ns}/flow_report.md" if ns else f"{_FLOW_DIR_REL}/flow_report.md")
     result: dict[str, str] = {}
-    if not flow_dir.is_dir():
-        return result
-    for path in sorted(flow_dir.glob("*.md")):
-        result[path.name] = read_text(str(path))
+    for rel in rels:
+        path: Path = Path(ROOT) / rel
+        if path.is_file():
+            result[path.name] = read_text(str(path))
     return result
 
 
@@ -206,10 +229,10 @@ def main() -> None:
                          width="stretch", hide_index=True)
 
     with tab_artifacts:
-        st.subheader("产物浏览（outputs/flow）")
-        reports: dict[str, str] = _load_report_markdowns()
+        st.subheader(f"产物浏览（{_FLOW_DIR_REL} · {scenario_name}）")
+        reports: dict[str, str] = _load_report_markdowns(sc, blueprint)
         if not reports:
-            st.info("outputs/flow 下暂无 .md 报告——先到「全流程执行」跑一次。")
+            st.info(f"场景 {scenario_name} 暂无 flow 报告——先到「全流程执行」跑一次。")
         else:
             picked_report: str = st.selectbox("选择报告", list(reports.keys()))
             st.markdown(reports[picked_report])

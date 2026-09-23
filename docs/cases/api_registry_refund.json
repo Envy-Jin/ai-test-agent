@@ -1,0 +1,35 @@
+[
+    {
+      "case_id": "TC001",
+      "title": "正常退款申请返回 refund_id",
+      "module": "refund",
+      "method": "POST",
+      "path": "/api/refund",
+      "test_type": "功能",
+      "priority": "P0",
+      "pytest_ids": ["outputs/generated_tests/refund/test_api_suite.py::TestApiRefund::test_normal"]
+    },
+    {
+      "case_id": "TC002",
+      "title": "退款缺少必填参数",
+      "module": "refund",
+      "method": "POST",
+      "path": "/api/refund",
+      "test_type": "参数缺失",
+      "priority": "P1",
+      "pytest_ids": [
+        "outputs/generated_tests/refund/test_api_suite.py::TestApiRefund::test_missing_params[payload0]",
+        "outputs/generated_tests/refund/test_api_suite.py::TestApiRefund::test_missing_params[payload1]"
+      ]
+    },
+    {
+      "case_id": "TC003",
+      "title": "订单号不合法退款被拒（401）",
+      "module": "refund",
+      "method": "POST",
+      "path": "/api/refund",
+      "test_type": "错误凭据",
+      "priority": "P0",
+      "pytest_ids": ["outputs/generated_tests/refund/test_api_suite.py::TestApiRefund::test_invalid_credentials"]
+    }
+  ]

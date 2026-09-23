@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "refund_no": "退款单号0",
+    "order_no": "订单号0",
+    "amount": 0.01,
+    "reason": "质量问题",
+    "status": "待审核"
+  },
+  {
+    "id": 2,
+    "refund_no": "退款单号1",
+    "order_no": "订单号1",
+    "amount": 200000.01,
+    "reason": "七天无理由",
+    "status": "已退款"
+  },
+  {
+    "id": 3,
+    "refund_no": "退款单号2",
+    "order_no": "订单号2",
+    "amount": 400000.0,
+    "reason": "发错货",
+    "status": "已驳回"
+  },
+  {
+    "id": 4,
+    "refund_no": "退款单号3",
+    "order_no": "订单号3",
+    "amount": 600000.0,
+    "reason": "其他",
+    "status": "待审核"
+  },
+  {
+    "id": 5,
+    "refund_no": "退款单号4",
+    "order_no": "订单号4",
+    "amount": 799999.99,
+    "reason": "质量问题",
+    "status": "已退款"
+  }
+]

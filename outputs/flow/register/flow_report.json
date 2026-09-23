@@ -1,84 +1,16 @@
 {
-  "started_at": "2026-09-20 21:39:27",
-  "note": "with_llm=False force=True fail_fast=False use_cache=True",
+  "started_at": "2026-09-22 20:15:46",
+  "note": "with_llm=True force=False fail_fast=False use_cache=True",
   "stages": [
     {
       "stage_id": "S1_requirement_cases",
-      "status": "skipped_needs_api",
-      "duration_s": 0.0,
-      "fingerprints": [],
-      "detail": "模型段需要真实 API：python day34_orchestrator.py --with-llm 补跑"
-    },
-    {
-      "stage_id": "S2_case_review_gate",
-      "status": "manual_pending",
-      "duration_s": 0.0,
-      "fingerprints": [],
-      "detail": "day35_review_gate：exp1 生成待评审种子 → 人工审阅 → exp2 盖章(reviewed) → upsert 硬门禁（reviewed=False 拒绝入库）；manual 永远等人"
-    },
-    {
-      "stage_id": "S3_api_plan",
       "status": "run_ok",
-      "duration_s": 83.53,
+      "duration_s": 199.66,
       "fingerprints": [
-        "outputs/api_test_plan_register.json#23e86a7d0fbb",
-        "outputs/api_test_plan_register.md#24ca853f4063"
+        "outputs/requirement_register_analysis.json#f159c0151c36",
+        "outputs/requirement_register_analysis.md#94762b157702"
       ],
       "detail": "cmd 子进程完成（exit=0）"
-    },
-    {
-      "stage_id": "S4_test_codegen",
-      "status": "run_ok",
-      "duration_s": 25.97,
-      "fingerprints": [
-        "outputs/generated_tests/register/conftest.py#3c4aca15367a",
-        "outputs/generated_tests/register/test_api_suite.py#81c6e5100ea3"
-      ],
-      "detail": "cmd 子进程完成（exit=0）"
-    },
-    {
-      "stage_id": "S5_test_data",
-      "status": "run_ok",
-      "duration_s": 25.29,
-      "fingerprints": [
-        "outputs/data_gen/register/register_normal.json#d30f79eca4e2"
-      ],
-      "detail": "cmd 子进程完成（exit=0）"
-    },
-    {
-      "stage_id": "S6_execute_normal",
-      "status": "run_ok",
-      "duration_s": 3.96,
-      "fingerprints": [
-        "outputs/flow/register/junit_normal.xml#9f0a37fe8d27"
-      ],
-      "detail": "pytest exit=0，JUnit 已落盘 outputs/flow/register/junit_normal.xml"
-    },
-    {
-      "stage_id": "S7_execute_bug",
-      "status": "run_ok",
-      "duration_s": 3.84,
-      "fingerprints": [
-        "outputs/flow/register/junit_bug.xml#8c14135e012c"
-      ],
-      "detail": "pytest exit=1，JUnit 已落盘 outputs/flow/register/junit_bug.xml"
-    },
-    {
-      "stage_id": "S8_exec_report",
-      "status": "run_ok",
-      "duration_s": 0.13,
-      "fingerprints": [
-        "outputs/flow/register/exec_report_normal.md#ed6df27636a2",
-        "outputs/flow/register/exec_report_bug.md#64a7e9ce0a20"
-      ],
-      "detail": "2 份执行报告已落盘"
-    },
-    {
-      "stage_id": "S9_bug_analyze",
-      "status": "skipped_needs_api",
-      "duration_s": 0.0,
-      "fingerprints": [],
-      "detail": "模型段需要真实 API：python day34_orchestrator.py --with-llm 补跑"
     }
   ]
 }

@@ -1,0 +1,84 @@
+{
+  "started_at": "2026-09-21 19:46:53",
+  "note": "with_llm=False force=False fail_fast=False use_cache=True",
+  "stages": [
+    {
+      "stage_id": "S1_requirement_cases",
+      "status": "skipped_needs_api",
+      "duration_s": 0.0,
+      "fingerprints": [],
+      "detail": "模型段需要真实 API：python day34_orchestrator.py --with-llm 补跑"
+    },
+    {
+      "stage_id": "S2_case_review_gate",
+      "status": "manual_pending",
+      "duration_s": 0.0,
+      "fingerprints": [],
+      "detail": "day35_review_gate：exp1 生成待评审种子 → 人工审阅 → exp2 盖章(reviewed) → upsert 硬门禁（reviewed=False 拒绝入库）；manual 永远等人"
+    },
+    {
+      "stage_id": "S3_api_plan",
+      "status": "run_ok",
+      "duration_s": 106.11,
+      "fingerprints": [
+        "outputs/api_test_plan_refund.json#0e326fa75472",
+        "outputs/api_test_plan_refund.md#780e02795a32"
+      ],
+      "detail": "cmd 子进程完成（exit=0）"
+    },
+    {
+      "stage_id": "S4_test_codegen",
+      "status": "run_ok",
+      "duration_s": 29.57,
+      "fingerprints": [
+        "outputs/generated_tests/refund/conftest.py#37e45ab8a19e",
+        "outputs/generated_tests/refund/test_api_suite.py#f1080dbdfdc8"
+      ],
+      "detail": "cmd 子进程完成（exit=0）"
+    },
+    {
+      "stage_id": "S5_test_data",
+      "status": "run_ok",
+      "duration_s": 28.92,
+      "fingerprints": [
+        "outputs/data_gen/refund/refund_normal.json#ffbd73eaea25"
+      ],
+      "detail": "cmd 子进程完成（exit=0）"
+    },
+    {
+      "stage_id": "S6_execute_normal",
+      "status": "run_ok",
+      "duration_s": 8.99,
+      "fingerprints": [
+        "outputs/flow/refund/junit_normal.xml#5a57bb08e798"
+      ],
+      "detail": "pytest exit=0，JUnit 已落盘 outputs/flow/refund/junit_normal.xml"
+    },
+    {
+      "stage_id": "S7_execute_bug",
+      "status": "run_ok",
+      "duration_s": 4.56,
+      "fingerprints": [
+        "outputs/flow/refund/junit_bug.xml#990786763216"
+      ],
+      "detail": "pytest exit=1，JUnit 已落盘 outputs/flow/refund/junit_bug.xml"
+    },
+    {
+      "stage_id": "S8_exec_report",
+      "status": "run_ok",
+      "duration_s": 0.47,
+      "fingerprints": [
+        "outputs/flow/refund/exec_report_normal.md#e86f7392c414",
+        "outputs/flow/refund/exec_report_bug.md#95e3e4e23f17"
+      ],
+      "detail": "2 份执行报告已落盘"
+    },
+    {
+      "stage_id": "S9_bug_analyze",
+      "status": "skipped_needs_api",
+      "duration_s": 0.0,
+      "fingerprints": [],
+      "detail": "模型段需要真实 API：python day34_orchestrator.py --with-llm 补跑"
+    }
+  ]
+}

@@ -43,6 +43,10 @@ VALID_REGISTER_PHONE: str = "13900139000"
 VALID_SMS_CODE: str = "123456"
 REGISTER_USER_ID: str = "U10001"
 
+# ── 退款场景契约（Day 42 新增，与 docs/apis/refund_api.json 严格对齐）──
+VALID_ORDER_NO: str = "ORD-1001"
+VALID_REFUND_AMOUNT: str = "99.5"
+REFUND_ID: str = "RF10001"
 
 def make_handler(bug_mode: bool = False, scenario: str = "login") -> type[BaseHTTPRequestHandler]:
     """按场景生成 handler（Day 41：mock 靶场从"只有登录"变成"按场景分派"）。
@@ -50,6 +54,7 @@ def make_handler(bug_mode: bool = False, scenario: str = "login") -> type[BaseHT
     scenario 决定实现哪套接口：
       "login"    → POST /api/login + GET /api/orders（**原实现逐字未动**）
       "register" → POST /api/register（短信验证码注册）
+      "refund"   → POST /api/refund（订单退款申请）
     其他值 → 落到 login 分支（调用方传错场景时至少行为可预测；真起不来会 404 现形）。
 
     ⚠️ 为什么必须加这个维度：S6/S7 是「把生成的套件打到 mock 上」。没有场景维度的
@@ -58,8 +63,9 @@ def make_handler(bug_mode: bool = False, scenario: str = "login") -> type[BaseHT
     """
     if scenario == "register":
         return _make_register_handler(bug_mode)
+    if scenario == "refund":
+        return _make_refund_handler(bug_mode)
     return _make_login_handler(bug_mode)
-
 
 def _make_login_handler(bug_mode: bool = False) -> type[BaseHTTPRequestHandler]:
     """登录场景 handler：POST /api/login（公开）+ GET /api/orders（需鉴权）。"""
@@ -165,6 +171,60 @@ def _make_register_handler(bug_mode: bool = False) -> type[BaseHTTPRequestHandle
             return
 
     return RegisterHandler
+
+def _make_refund_handler(bug_mode: bool = False) -> type[BaseHTTPRequestHandler]:
+    """退款场景 handler：POST /api/refund（订单号 + 退款金额）。
+
+    接口契约（与 docs/apis/refund_api.json 对齐）：
+      空 order_id 或空 amount                → 400 {"code": 40001}
+      order_id=ORD-1001 & amount=99.5        → 200 {"code": 0, "data": {"refund_id": "RF10001"}}
+      其他（订单号不存在/不属于当前用户）    → 401 {"code": 40101}
+      其他路径 → 404；GET 一律 404（本场景暂无查询接口）。
+
+    🐛 埋 Bug（bug_mode=True）：**校验整段被摘掉** → 一律 200 受理成功。
+       对应 docs/bugs/refund_bugs.md 的 BUG-F01（退款接口未做订单归属校验）。
+       ⚠️ 与 register 的埋法**不同**：register 只放过「验证码不匹配」一支（S7 红 1 条），
+          refund 是「所有分支全放过」（S7 红 3 条）——
+          **埋 Bug 的爆炸半径决定 S7 的红度**，这本身是个值得看的观测。
+    """
+
+    def _do_post(self: BaseHTTPRequestHandler) -> None:
+        if self.path != "/api/refund":
+            _send_json(self, 404, {"code": 40400, "message": f"未知接口 {self.path}"})
+            return
+        payload: dict[str, object] = _read_json(self)
+        order_raw: object = payload.get("order_id", "")
+        amount_raw: object = payload.get("amount", "")
+        order_no: str = order_raw if isinstance(order_raw, str) else ""
+        amount: str = amount_raw if isinstance(amount_raw, str) else ""
+        success: dict[str, object] = {
+            "code": 0, "message": "退款申请已受理", "data": {"refund_id": REFUND_ID},
+        }
+        if bug_mode:
+            # 🐛 缺陷：校验整段被摘掉 → 空参（应 400）与非法订单号（应 401）也一律受理
+            _send_json(self, 200, success)
+        elif not order_no or not amount:
+            _send_json(self, 400, {"code": 40001, "message": "订单号和退款金额不能为空"})
+        elif order_no == VALID_ORDER_NO and amount == VALID_REFUND_AMOUNT:
+            _send_json(self, 200, success)
+        else:
+            _send_json(self, 401, {"code": 40101, "message": "订单不存在或不属于当前用户"})
+
+    def _do_get(self: BaseHTTPRequestHandler) -> None:
+        _send_json(self, 404, {"code": 40400, "message": f"退款场景未实现 GET {self.path}"})
+
+    class RefundHandler(BaseHTTPRequestHandler):
+        """退款接口 handler。"""
+
+        do_POST = _do_post
+        do_GET = _do_get
+
+        def log_message(self, format: str, *args: object) -> None:
+            """静音默认日志（避免测试刷屏）。"""
+            return
+
+    return RefundHandler
+
 
 def _read_json(handler: BaseHTTPRequestHandler) -> dict[str, object]:
     """读取请求体并解析 JSON（Content-Length 是 str|None → or '0'，Day 27 坑位）。"""
@@ -308,6 +368,48 @@ def verify_register_bug_mock(port: int = 8767) -> None:
         _fire(port, "POST", "/api/register", "缺 phone（仍 400）",
               {"code": VALID_SMS_CODE}, expect_status=400)
         print("✅ 埋 Bug 版缺陷行为确认（验证码未校验）")
+    finally:
+        stop_mock()
+
+def verify_refund_mock(port: int = 8768) -> None:
+    """退款场景 4 分支验证（正常/缺 order_id/缺 amount/非法订单号，零外网）。
+
+    ⚠️ 端口用 8768（= docs/apis/refund_api.json 的 base_url 端口）。
+    """
+    print("=" * 60)
+    print("实验：verify_refund_mock —— refund 场景 4 分支")
+    start_mock(port, scenario="refund")
+    try:
+        _fire(port, "POST", "/api/refund", "正常退款申请",
+              {"order_id": VALID_ORDER_NO, "amount": VALID_REFUND_AMOUNT}, expect_status=200)
+        _fire(port, "POST", "/api/refund", "缺 order_id",
+              {"amount": VALID_REFUND_AMOUNT}, expect_status=400)
+        _fire(port, "POST", "/api/refund", "缺 amount",
+              {"order_id": VALID_ORDER_NO}, expect_status=400)
+        _fire(port, "POST", "/api/refund", "非法订单号",
+              {"order_id": "invalid_value", "amount": VALID_REFUND_AMOUNT}, expect_status=401)
+        print("✅ refund 正常版 4 分支全部符合预期")
+    finally:
+        stop_mock()
+
+def verify_refund_bug_mock(port: int = 8768) -> None:
+    """退款场景埋 Bug 版验证：缺陷 BUG-F01（校验整段被摘掉）行为确认。
+
+    ⚠️ 端口用 8768（= docs/apis/refund_api.json 的 base_url 端口）。
+    三支全部被放过（空参 200 / 非法订单号 200），只有正常申请**看不出来** ——
+    所以 S7 里 4 个 node 会有 3 个失败：**缺陷的爆炸半径直接决定红了几条**。
+    """
+    print("=" * 60)
+    print("实验：verify_refund_bug_mock —— 埋 Bug 版（缺陷: 校验被摘掉 → 空参/非法单号都 200）")
+    start_mock(port, bug_mode=True, scenario="refund")
+    try:
+        _fire(port, "POST", "/api/refund", "正常退款申请（看不出来）",
+              {"order_id": VALID_ORDER_NO, "amount": VALID_REFUND_AMOUNT}, expect_status=200)
+        _fire(port, "POST", "/api/refund", "缺 order_id（应400实际200）",
+              {"amount": VALID_REFUND_AMOUNT}, expect_status=200)
+        _fire(port, "POST", "/api/refund", "非法订单号（应401实际200）",
+              {"order_id": "invalid_value", "amount": VALID_REFUND_AMOUNT}, expect_status=200)
+        print("✅ 埋 Bug 版缺陷行为确认（校验整段被摘掉）")
     finally:
         stop_mock()
 

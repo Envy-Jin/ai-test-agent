@@ -102,10 +102,27 @@ REGISTER_SCENARIO = ScenarioConfig(
     case_registry="docs/cases/api_registry_register.json",
 )
 
+# 第三场景：refund（Day 42 演示）—— 五份资产全新虚构，端口 8768（与 login/register 都不同）。
+# 资产形状与 register 同构（接口文档 .json + 数据模型 .json）⇒ S3/S5 都是 code 段，
+# 代码链（S3→S4→S5→S6→S7→S8）**零 API 可整条跑通**；只有人写的 .txt/.md 走模型。
+# ⚠️ 加一个场景的**最小闭环**：资产 5 份 + 本文件 2 处 + 靶场分派 1 处。
+#    build_blueprint / run_flow / cli.py / 生成器一律不动 —— 框架里**没有场景白名单**。
+REFUND_SCENARIO = ScenarioConfig(
+    name="refund",
+    title="订单退款",
+    requirement_doc="docs/requirements/refund_requirement.txt",
+    api_doc="docs/apis/refund_api.json",
+    schema_docs=["docs/schemas/refund.json"],
+    bug_doc="docs/bugs/refund_bugs.md",
+    mock_port=8768,
+    case_registry="docs/cases/api_registry_refund.json",
+)
+
 # 场景注册表单一来源（Day 41：从 cli.py 的局部字典提上来的——入口层只查表，不自己维护）
 SCENARIO_REGISTRY: dict[str, ScenarioConfig] = {
     LOGIN_SCENARIO.name: LOGIN_SCENARIO,
     REGISTER_SCENARIO.name: REGISTER_SCENARIO,
+    REFUND_SCENARIO.name: REFUND_SCENARIO,
 }
 
 
@@ -196,7 +213,7 @@ def build_blueprint(sc: ScenarioConfig) -> list[StageSpec]:
             title="需求解析 → 分级用例",
             source="day29",
             kind=kind_for_docs([sc.requirement_doc]),
-            inputs=[sc.requirement_doc],
+            inputs=[sc.requirement_doc],    
             outputs=[req_json, req_md],
             cmd=f"from day29_requirement_analysis import exp2_analyze_file; "
                 f"exp2_analyze_file('../../{sc.requirement_doc}', '{sc.name}')",
